@@ -12,7 +12,7 @@ def main():
 	print(GR)
 
 	AF = FiniteAutomata()
-	AF.load("../Testes/teste.txt")
+	AF.load("../Testes/teste.afd")
 	GR = AF_to_GR(AF)
 	print(GR)
 

@@ -3,21 +3,20 @@ from GR import RegularGrammar
 from AF import *
 
 def main():
-	# a) Lendo, salvando e carregando um AF
+	# # a) Lendo, salvando e carregando um AF
 	# AF = FiniteAutomata()
-	# AF.read("../Testes/automato_finito_1.txt")
-	# AF.save('AF_pickle')
-	# AF = FiniteAutomata()
-	# AF.load('AF_pickle')
+	# AF.read("../Testes/automato_finito_1.afd")
+	# AF.save('AF_json')
+	# AF.load('AF_json')
 	# AF.show()
 
 	# a) Lendo, salvando e carregando uma GR
-	# GR = RegularGrammar()
-	# GR.read("../Testes/gramatica_regular_1.txt")
-	# GR.save('GR_pickle')
-	# GR = RegularGrammar()
-	# GR.load('GR_pickle')
-	# print(GR)
+	GR = RegularGrammar()
+	GR.read("../Testes/gramatica_regular_1.gr")
+	GR.save('GR_json')
+	GR = RegularGrammar()
+	GR.load('GR_json')
+	print(GR)
 
 	# b) Transformando um AFD em uma GR
 	# AF = FiniteAutomata()
@@ -41,7 +40,7 @@ def main():
 	# recognized = AF_string_recognizer(AF, 'aababb')
 	# print(recognized)
 
-	pass
+	# pass
 
 if __name__ == "__main__":
     main()

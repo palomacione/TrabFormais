@@ -1,11 +1,11 @@
-import pickle
+import json
+from copy import deepcopy
 
 class FiniteAutomata:
-    def __init__(self, trans=None, initial="0", accepting=None):
+    def __init__(self, trans=None, initial="0", accepting=None, states=None, alphabet=None):
         self.trans = {} # Dicionário de Transições
         self.initial = initial
         self.accepting = set()
-
         self.states = set() # Conjunto de estados
         self.alphabet = set() # Conjunto de símobolos do alfabeto
 
@@ -53,20 +53,29 @@ class FiniteAutomata:
                 current = self.trans[current][c]  # Se não, vou para o estado em que a letra leva
 
         return current in self.accepting  
-    
+
     def load(self, file):
-        with open(file, "rb") as pickle_file:
-            AF = pickle.load(pickle_file)
-            self.accepting = AF.accepting
-            self.trans = AF.trans
-            self.alphabet = AF.alphabet
-            self.states = AF.states
-            self.initial =  AF.initial
+        with open(file, "r") as json_file:
+            AF = json.load(json_file)
+
+        self.trans = AF["trans"]
+        self.initial = AF["initial"]
+        self.accepting = set(AF["accepting"])
+        self.states = set(AF["states"])
+        self.alphabet = set(AF["alphabet"])
+        
             
-    # Salva o objeto em um arquivo pickle local
+    # Salva o objeto em um arquivo json local
     def save(self, file):
-        with open(file, 'wb') as pickle_file:
-            pickle.dump(self, pickle_file)
+        self_json = deepcopy(self.__dict__)  # Fazemos uma cópia do objeto para não o alterarmos
+
+        # Aqui é necessário convertar pra lista antes de salvar para o JSON
+        self_json["states"] = list(self_json["states"])  
+        self_json["accepting"] = list(self_json["accepting"])
+        self_json["alphabet"] = list(self_json["alphabet"])
+
+        with open(file, "w") as json_file:
+            json.dump(self_json, json_file)
 
     def show(self):
         print(self.trans, self.accepting, self.initial)

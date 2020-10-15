@@ -1,4 +1,5 @@
-import pickle
+import json
+from copy import deepcopy
 
 class RegularGrammar():
 
@@ -60,16 +61,28 @@ class RegularGrammar():
 					else:
 						self.non_terminals.add(char)
 
-	# Salva a GR em um arquivo pickle local
+	# Salva a GR em um arquivo json local
 	def save(self, file):
-		with open(file, 'wb') as pickle_file:
-			pickle.dump(self, pickle_file)
+		self_json = deepcopy(self.__dict__)  # Fazemos uma cópia do objeto para não o alterarmos
 
-	# Carrega uma GR a partir de um arquivo pickle local
+		# Aqui é necessário convertar pra lista antes de salvar para o JSON
+		for head in self_json["rules"]:
+			self_json["rules"][head] = list(self_json["rules"][head])
+
+		self_json["terminals"] = list(self_json["terminals"])  
+		self_json["non_terminals"] = list(self_json["non_terminals"])
+		with open(file, "w") as json_file:
+			json.dump(self_json, json_file)
+
+	# Carrega uma GR a partir de um arquivo json local
 	def load(self, file):
-		with open(file, "rb") as pickle_file:
-			GR = pickle.load(pickle_file)
-			self.rules = GR.rules
-			self.initial_state = GR.initial_state
-			self.terminals = GR.terminals
-			self.non_terminals = GR.non_terminals
+		with open(file, "rb") as json_file:
+			GR = json.load(json_file)
+			self.rules = GR["rules"]
+
+			for head in GR["rules"]:
+				self.rules[head] = set(GR["rules"][head])
+
+			self.initial_state = GR["initial_state"]
+			self.terminals = set(GR["terminals"])
+			self.non_terminals = set(GR["non_terminals"])

@@ -1,0 +1,1 @@
+{"rules": {"S": ["aA", "a"], "A": ["bA", "a"]}, "initial_state": "S", "terminals": ["b", "a"], "non_terminals": ["A"]}

@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from prettytable import PrettyTable
 
 class FiniteAutomata:
     def __init__(self, trans=None, initial="0", accepting=None, states=None, alphabet=None):
@@ -78,7 +79,30 @@ class FiniteAutomata:
             json.dump(self_json, json_file)
 
     def show(self):
-        print(self.trans, self.accepting, self.initial)
+        table = PrettyTable()
+
+        alphabet = sorted(list(self.alphabet)) # Como é set, preciso colocar em ordem
+        states = sorted(list(self.states))
+        states1 = deepcopy(states)
+
+        for i, s in enumerate(states):
+            if s in self.accepting:
+                states1[i] = "*"+states1[i]
+            if s == self.initial:
+                states1[i] = "->"+states1[i]
+                
+        table.add_column("Estados", states1)
+
+        for a in alphabet: # Então aqui eu vou fazer de forma ordenada, começando por (a, q0), (a,q1), etc
+            column = []
+            for s in states:
+                if a not in self.trans[s]:
+                    column.append("Ø")
+                else:
+                    column.append(self.trans[s][a])
+            table.add_column(a, column)
+    
+        print(table)
 
 # Classe de AF não Deterministico, filho de um Automato Finito
 class NDFiniteAutomata(FiniteAutomata):
@@ -89,3 +113,41 @@ class NDFiniteAutomata(FiniteAutomata):
         if by not in self.trans[from_]:
             self.trans[from_][by] = set()
         self.trans[from_][by].add(to)
+    
+    def eClosure(self, states):  # Retorna os estados alcancaveis por & a partir de um estado ou um conjunto de estados
+        eClosure = set()
+        while states:
+            s = states.pop()
+            eClosure.add(s)
+            if "&" in self.trans[s]:
+                for x in self.trans[s]["&"]:
+                    if x not in eClosure:
+                        states.add(x)
+        return eClosure
+    
+    def save(self, file):
+        self_json = deepcopy(self.__dict__)  # Fazemos uma cópia do objeto para não o alterarmos
+
+        # Aqui é necessário convertar pra lista antes de salvar para o JSON
+        self_json["states"] = list(self_json["states"])  
+        self_json["accepting"] = list(self_json["accepting"])
+        self_json["alphabet"] = list(self_json["alphabet"])
+        for t in self_json["trans"]:
+            for a in self_json["trans"][t]:
+                self_json["trans"][t][a] = list(self_json["trans"][t][a])
+
+        with open(file, "w") as json_file:
+            json.dump(self_json, json_file)
+    
+    def load(self, file):
+        with open(file, "r") as json_file:
+            AFND = json.load(json_file)
+
+        self.trans = AF["trans"]
+        self.initial = AF["initial"]
+        self.accepting = set(AF["accepting"])
+        self.states = set(AF["states"])
+        for t in self_json["trans"]:
+            for a in self_json["trans"][t]:
+                self_json["trans"][t][a] = set(self_json["trans"][t][a])
+        self.alphabet = set(AF["alphabet"])

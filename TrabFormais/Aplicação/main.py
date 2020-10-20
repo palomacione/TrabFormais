@@ -4,19 +4,20 @@ from AF import *
 
 def main():
 	# # a) Lendo, salvando e carregando um AF
-	# AF = FiniteAutomata()
-	# AF.read("../Testes/automato_finito_1.afd")
-	# AF.save('AF_json')
-	# AF.load('AF_json')
-	# AF.show()
+	# AFND = NDFiniteAutomata()
+	# AFND.read("../Testes/afndcom&.afnd")
+	# AFND.save('AFND_json')
+	# AFND.load('AFND_json')
+	# AFND.show()
+	# print(AFND.eClosure({"3"}))
 
 	# a) Lendo, salvando e carregando uma GR
-	GR = RegularGrammar()
-	GR.read("../Testes/gramatica_regular_1.gr")
-	GR.save('GR_json')
-	GR = RegularGrammar()
-	GR.load('GR_json')
-	print(GR)
+	# GR = RegularGrammar()
+	# GR.read("../Testes/gramatica_regular_1.gr")
+	# GR.save('GR_json')
+	# GR = RegularGrammar()
+	# GR.load('GR_json')
+	# print(GR)
 
 	# b) Transformando um AFD em uma GR
 	# AF = FiniteAutomata()
@@ -40,7 +41,7 @@ def main():
 	# recognized = AF_string_recognizer(AF, 'aababb')
 	# print(recognized)
 
-	# pass
+	pass
 
 if __name__ == "__main__":
     main()

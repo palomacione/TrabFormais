@@ -24,6 +24,7 @@ class RegularGrammar():
 
 		formatted.append('\nRepresentacao ao usuario:\n')
 		for head, body in self.rules.items():
+			print(body)
 			formatted_body = []
 			for b in body:
 				formatted_body.append(b)
@@ -69,7 +70,7 @@ class RegularGrammar():
 		for head in self_json["rules"]:
 			self_json["rules"][head] = list(self_json["rules"][head])
 
-		self_json["terminals"] = list(self_json["terminals"])  
+		self_json["terminals"] = list(self_json["terminals"])
 		self_json["non_terminals"] = list(self_json["non_terminals"])
 		with open(file, "w") as json_file:
 			json.dump(self_json, json_file)

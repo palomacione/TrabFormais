@@ -1,4 +1,4 @@
-from conversoes import AFD_to_GR, GR_to_AFND, AF_string_recognizer
+from conversoes import AFD_to_GR, GR_to_AFND, AF_string_recognizer, AFD_minimizer
 from GR import RegularGrammar
 from AF import *
 
@@ -21,7 +21,7 @@ def main():
 
 	# b) Transformando um AFD em uma GR
 	# AF = FiniteAutomata()
-	# AF.read("../Testes/automato_finito_1.txt")
+	# AF.read("../Testes/automato_finito_2.txt")
 	# GR = AFD_to_GR(AF)
 	# AF.show()
 	# print(GR)
@@ -40,6 +40,12 @@ def main():
 	# print(recognized)
 	# recognized = AF_string_recognizer(AF, 'aababb')
 	# print(recognized)
+
+	# e) Minimização de AFD
+	AFD = FiniteAutomata()
+	AFD.read("../Testes/automato_finito_7.txt")
+	AFD_min = AFD_minimizer(AFD)
+	# AFD_min.show()
 
 	pass
 

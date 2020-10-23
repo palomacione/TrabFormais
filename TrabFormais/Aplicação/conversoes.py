@@ -1,5 +1,5 @@
 from GR import RegularGrammar
-from AF import FiniteAutomata
+from AF import FiniteAutomata, NDFiniteAutomata
 from collections import defaultdict
 
 # Converte AFD para GR
@@ -176,26 +176,29 @@ def AFD_minimizer(AFD):
 		equivalencies_control = equivalencies
 	print(equivalencies)
 
+def AFND_determinizer(AFND):
+	AF = FiniteAutomata()
+	AF.initial = AFND.initial
+	AF.states = AFND.states
+	states = list(map(list, AFND.states))
 
+	new_states = []
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#
+	for t in AFND.trans:
+		for a in AFND.alphabet:
+			if a not in AFND.trans[t]:
+					pass
+			elif list(AFND.trans[t][a]) not in states:
+				for state in AFND.trans[t][a]:
+					new_states.append(list(AFND.trans[t][a]))
+					while new_states:
+						to_add = list(new_states.pop()) 
+						list_to_state = str("".join(sorted(to_add)))
+						AF.states.add(list_to_state)
+						for state in to_add:
+							for a in AFND.alphabet:
+								reach = []
+								if a not in AFND.trans[state]:
+									continue
+								else:
+									reach.append(AFND.trans[state][a])

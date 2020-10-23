@@ -36,7 +36,7 @@ class RegularGrammar():
 		return "".join(formatted)
 
 	# Lê o arquivo
-	def read(self, file):
+	def load(self, file):
 		# Preenche a variável rules
 		with open(file, 'r') as f:
 			lines = [line.rstrip() for line in f]
@@ -63,27 +63,16 @@ class RegularGrammar():
 						self.non_terminals.add(char)
 
 	# Salva a GR em um arquivo json local
-	def save(self, file):
-		self_json = deepcopy(self.__dict__)  # Fazemos uma cópia do objeto para não o alterarmos
+	def save(self, filename):
+		formatted = []
+		with open(filename, "w") as writer:
+			for head, body in self.rules.items():
+				formatted_body = []
+				for b in body:
+					formatted_body.append(b)
+					formatted_body.append(' | ')
+				formatted_body = formatted_body[:-1]
+				formatted_body = "".join(formatted_body)
+				formatted.append(f'{head} -> {formatted_body}\n')
+			writer.write("".join(formatted))
 
-		# Aqui é necessário convertar pra lista antes de salvar para o JSON
-		for head in self_json["rules"]:
-			self_json["rules"][head] = list(self_json["rules"][head])
-
-		self_json["terminals"] = list(self_json["terminals"])
-		self_json["non_terminals"] = list(self_json["non_terminals"])
-		with open(file, "w") as json_file:
-			json.dump(self_json, json_file)
-
-	# Carrega uma GR a partir de um arquivo json local
-	def load(self, file):
-		with open(file, "rb") as json_file:
-			GR = json.load(json_file)
-			self.rules = GR["rules"]
-
-			for head in GR["rules"]:
-				self.rules[head] = set(GR["rules"][head])
-
-			self.initial_state = GR["initial_state"]
-			self.terminals = set(GR["terminals"])
-			self.non_terminals = set(GR["non_terminals"])

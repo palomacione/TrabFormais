@@ -1,6 +1,5 @@
-import json
-from copy import deepcopy
 from prettytable import PrettyTable
+from copy import deepcopy
 
 class FiniteAutomata:
     def __init__(self, trans=None, initial="0", accepting=None, states=None, alphabet=None):
@@ -18,7 +17,7 @@ class FiniteAutomata:
     def addAccepting(self, state):
         self.accepting.add(state)
 
-    def read(self, file):
+    def load(self, file):
         f = open(file, "r")
         f1 = f.readlines()
         initial = f1[1].replace('\n', '')
@@ -54,29 +53,18 @@ class FiniteAutomata:
                 current = self.trans[current][c]  # Se não, vou para o estado em que a letra leva
 
         return current in self.accepting  
-
-    def load(self, file):
-        with open(file, "r") as json_file:
-            AF = json.load(json_file)
-
-        self.trans = AF["trans"]
-        self.initial = AF["initial"]
-        self.accepting = set(AF["accepting"])
-        self.states = set(AF["states"])
-        self.alphabet = set(AF["alphabet"])
-        
             
     # Salva o objeto em um arquivo json local
-    def save(self, file):
-        self_json = deepcopy(self.__dict__)  # Fazemos uma cópia do objeto para não o alterarmos
+    def save(self, filename):
+        with open(filename, "w") as writer:
+            writer.write(str(len(self.states))+"\n")
+            writer.write(self.initial+"\n")
+            writer.write(str(",".join(sorted(self.accepting)))+"\n")
+            writer.write(str(",".join(sorted(self.alphabet)))+"\n")
 
-        # Aqui é necessário convertar pra lista antes de salvar para o JSON
-        self_json["states"] = list(self_json["states"])  
-        self_json["accepting"] = list(self_json["accepting"])
-        self_json["alphabet"] = list(self_json["alphabet"])
-
-        with open(file, "w") as json_file:
-            json.dump(self_json, json_file)
+            for t in self.trans:
+                for b in self.trans[t]:
+                    writer.write("{},{},{}".format(t, b, self.trans[t][b]+"\n"))
 
     def show(self):
         table = PrettyTable()
@@ -125,29 +113,50 @@ class NDFiniteAutomata(FiniteAutomata):
                         states.add(x)
         return eClosure
     
-    def save(self, file):
-        self_json = deepcopy(self.__dict__)  # Fazemos uma cópia do objeto para não o alterarmos
+    def load(self, filename):
+        f = open(filename, "r")
+        f1 = f.readlines()
+        initial = f1[1].replace('\n', '')
+        accepting = f1[2].replace('\n', '').split(',')
+        for s in accepting:
+            self.addAccepting(s)
 
-        # Aqui é necessário convertar pra lista antes de salvar para o JSON
-        self_json["states"] = list(self_json["states"])  
-        self_json["accepting"] = list(self_json["accepting"])
-        self_json["alphabet"] = list(self_json["alphabet"])
-        for t in self_json["trans"]:
-            for a in self_json["trans"][t]:
-                self_json["trans"][t][a] = list(self_json["trans"][t][a])
+		# Preenche os símbolos do alfabeto
+        alphabet = f1[3].replace('\n', '').split(',')
+        for a in alphabet:
+            self.alphabet.add(a)
 
-        with open(file, "w") as json_file:
-            json.dump(self_json, json_file)
-    
-    def load(self, file):
-        with open(file, "r") as json_file:
-            AFND = json.load(json_file)
+        for line in f1[4:]:
+            l1 = line.replace('\n', '').split(',')
+            from_ = l1[0]
+            by = l1[1]
+            to = l1[2]
 
-        self.trans = AF["trans"]
-        self.initial = AF["initial"]
-        self.accepting = set(AF["accepting"])
-        self.states = set(AF["states"])
-        for t in self_json["trans"]:
-            for a in self_json["trans"][t]:
-                self_json["trans"][t][a] = set(self_json["trans"][t][a])
-        self.alphabet = set(AF["alphabet"])
+            if "-" in l1[2]:
+                to = l1[2].split("-") 
+                for s in to:
+                    self.states.add(s)
+                    self.addTrans(from_, by, s)
+            else:   
+                # Adiciona conjunto de estados
+                self.states.add(to)
+                self.states.add(from_)
+                self.addTrans(from_, by, to)
+        
+        for s in self.states:
+            if s not in self.trans:
+                self.trans[s] = {}
+
+        self.initial = initial
+
+    def save(self, filename):
+        with open(filename, "w") as writer:
+            writer.write(str(len(self.states))+"\n")
+            writer.write(self.initial+"\n")
+            writer.write(str(",".join(sorted(self.accepting)))+"\n")
+            writer.write(str(",".join(sorted(self.alphabet)))+"\n")
+
+            for t in self.trans:
+                for b in self.trans[t]:
+                        f = '-'.join(self.trans[t][b])
+                        writer.write("{},{},{}".format(t, b, f)+"\n")

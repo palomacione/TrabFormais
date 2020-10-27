@@ -6,8 +6,9 @@ def main():
 	# # a) Lendo, salvando e carregando um AF
 	AFND = NDFiniteAutomata()
 	AFND.load("../Testes/afndsem&.afnd")
-	AFND_determinizer(AFND)
-	# AFND.show()
+	AFND.show()
+	AF = AFND_determinizer(AFND)
+	AF.show()
 	AFND.save("teste_1")
 	# AFND.load('AFND_json')
 	# AFND.show()

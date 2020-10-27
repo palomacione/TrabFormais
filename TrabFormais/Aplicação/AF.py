@@ -14,6 +14,9 @@ class FiniteAutomata:
             self.trans[from_] = {}
         self.trans[from_][by] = to
 
+    def addState(self, state):
+        self.states.add(state) 
+
     def addAccepting(self, state):
         self.accepting.add(state)
 
@@ -37,8 +40,8 @@ class FiniteAutomata:
             to = l1[2]
 
 			# Preenche o conjunto de estados
-            self.states.add(to)
-            self.states.add(from_)
+            self.addState(to)
+            self.addState(from_)
 
             self.addTrans(from_, by, to)
         self.initial = initial
@@ -84,6 +87,8 @@ class FiniteAutomata:
         for a in alphabet: # Então aqui eu vou fazer de forma ordenada, começando por (a, q0), (a,q1), etc
             column = []
             for s in states:
+                if s not in self.trans:
+                    self.trans[s] = {}
                 if a not in self.trans[s]:
                     column.append("Ø")
                 else:
@@ -104,14 +109,17 @@ class NDFiniteAutomata(FiniteAutomata):
     
     def eClosure(self, states):  # Retorna os estados alcancaveis por & a partir de um estado ou um conjunto de estados
         eClosure = set()
+        accept = False
         while states:
             s = states.pop()
             eClosure.add(s)
+            if s in self.accepting:
+                accept = True
             if "&" in self.trans[s]:
                 for x in self.trans[s]["&"]:
                     if x not in eClosure:
-                        states.add(x)
-        return eClosure
+                        states.append(x)
+        return (eClosure, accept)
     
     def load(self, filename):
         f = open(filename, "r")
@@ -135,12 +143,12 @@ class NDFiniteAutomata(FiniteAutomata):
             if "-" in l1[2]:
                 to = l1[2].split("-") 
                 for s in to:
-                    self.states.add(s)
+                    self.addState(s)
                     self.addTrans(from_, by, s)
             else:   
                 # Adiciona conjunto de estados
-                self.states.add(to)
-                self.states.add(from_)
+                self.addState(to)
+                self.addState(from_)
                 self.addTrans(from_, by, to)
         
         for s in self.states:

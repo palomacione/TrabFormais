@@ -1,5 +1,5 @@
 from GR import RegularGrammar
-from AF import FiniteAutomata, NDFiniteAutomata
+from AF import *
 from collections import defaultdict
 
 # Converte AFD para GR
@@ -176,29 +176,57 @@ def AFD_minimizer(AFD):
 		equivalencies_control = equivalencies
 	print(equivalencies)
 
+def getState(l):
+    if len(l) > 1:
+        l = list(l)
+        l.sort()
+        return ''.join(l)
+    else:
+        return list(l)[0]
+
 def AFND_determinizer(AFND):
 	AF = FiniteAutomata()
 	AF.initial = AFND.initial
-	AF.states = AFND.states
-	states = list(map(list, AFND.states))
+	alph = AFND.alphabet
 
-	new_states = []
+	if "&" in alph:
+		AF.alphabet = alph.remove("&")
+	else:
+		AF.alphabet = alph
+	AF.alphabet = AFND.alphabet
+	tState = []  # Novos estados que surgem a partir de transições 
+	AF.initial = AFND.initial
 
-	for t in AFND.trans:
-		for a in AFND.alphabet:
-			if a not in AFND.trans[t]:
-					pass
-			elif list(AFND.trans[t][a]) not in states:
-				for state in AFND.trans[t][a]:
-					new_states.append(list(AFND.trans[t][a]))
-					while new_states:
-						to_add = list(new_states.pop()) 
-						list_to_state = str("".join(sorted(to_add)))
-						AF.states.add(list_to_state)
-						for state in to_add:
-							for a in AFND.alphabet:
-								reach = []
-								if a not in AFND.trans[state]:
-									continue
-								else:
-									reach.append(AFND.trans[state][a])
+	for state in AFND.states:
+		tState.append({state})  # Aqui eu adiciono os estados para começar a transitar por eles
+	while tState:  
+		stateList = list(tState.pop())
+		init = False
+		if len(stateList) == 1 and stateList[0] == AFND.initial:
+			init = True
+		(stateClosure, isAccepting) = AFND.eClosure(stateList)
+		s = getState(stateClosure)  # Essa parte deixa o estado [0,1,2] como "012" na lista de estados
+		AF.addState(s)
+
+		if init:
+			AF.initial = s
+		if isAccepting:
+			AF.addAccepting(s)
+
+		for a in AFND.alphabet:  # Pra cada letra do alfabeto
+			if a == "&":   # (não irei mais transitar por &)
+				continue
+			trans = set() # Cria um set com as novas transições
+			for toState in stateClosure:  # Pra cada estado do meu e-fecho
+				if a not in AFND.trans[toState]:   # Se eu não transito pela letra, continua pro próx estado do e-fecho
+					continue
+				trans.update(AFND.trans[toState][a])  # Se não, coloca no set o estado para qual eu transito pela letra
+			if len(trans) == 0:   # Se não tenho transição, continua pra próxima letra
+				continue
+			(closure, isAccepting) = AFND.eClosure(list(trans)) # Se eu tenho, então faço o e-fecho dos estados que eu adicionei
+			newState = getState(closure)  # Transforma naquele jeito bonitinho
+			if not newState in AF.trans and not newState in tState:  # Se eu ainda não tenho esse estado nas minha lista de transições, adiciona
+				tState.append(closure)
+			AF.addTrans(s, a, newState)
+
+	return AF

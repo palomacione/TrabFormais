@@ -76,21 +76,6 @@ def GR_to_AFND(GR):
 
 	return AFND
 
-# Retorna True se o AF reconhece a string s
-def AF_string_recognizer(AF, s):
-	# TODO: AFD = AFND_to_AFD(AF) melhor converter para AFD primeiro (método ainda não existe)
-	AFD = AF
-	curr_state = AFD.initial
-	for char in s:
-		next_state = AFD.trans[curr_state].get(char)
-		# Se é possível ir de curr_state para next_state por char
-		if next_state:
-			curr_state = next_state
-		else:
-			return False
-	# Se o estado em que a computação parou for um estado final
-	return curr_state in AFD.accepting
-
 # Minimiza o AFD
 def AFD_minimizer(AFD):
 	#AFD.show()

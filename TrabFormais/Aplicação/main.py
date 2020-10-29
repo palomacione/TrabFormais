@@ -1,15 +1,26 @@
-from conversoes import AFD_to_GR, GR_to_AFND, AF_string_recognizer, AFD_minimizer, AFND_determinizer
+from conversoes import AFD_to_GR, GR_to_AFND, AFD_minimizer, AFND_determinizer
 from GR import RegularGrammar
 from AF import *
 
 def main():
 	# # a) Lendo, salvando e carregando um AF
-	AFND = NDFiniteAutomata()
-	AFND.load("../Testes/afndsem&.afnd")
-	AFND.show()
-	AF = AFND_determinizer(AFND)
-	AF.show()
-	AFND.save("teste_1")
+	AF1 = FiniteAutomata()
+	AF1.load("../Testes/automato_finito_9.afd")
+	# AF1.show()
+	AF2 = FiniteAutomata()
+	AF2.load("../Testes/automato_finito_8.afd")
+	# AFD_minimizer(AF1)
+	Re = AF1.union(AF2)
+	AF1.show()
+
+	# Re = AFND_determinizer(R)
+	Re.show()
+	# AFND = NDFiniteAutomata()
+	# AFND.load("../Testes/afndsem&.afnd")
+	# AFND.show()
+	# AF = AFND_determinizer(AFND)
+	# AF.show()
+	# AFND.save("teste_1")
 	# AFND.load('AFND_json')
 	# AFND.show()
 	# print(AFND.eClosure({"3"}))

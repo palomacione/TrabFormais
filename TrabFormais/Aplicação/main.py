@@ -4,17 +4,17 @@ from AF import *
 
 def main():
 	# # a) Lendo, salvando e carregando um AF
-	AF1 = FiniteAutomata()
-	AF1.load("../Testes/automato_finito_9.afd")
+	# AF1 = FiniteAutomata()
+	# AF1.load("../Testes/automato_finito_9.afd")
 	# AF1.show()
-	AF2 = FiniteAutomata()
-	AF2.load("../Testes/automato_finito_8.afd")
+	# AF2 = FiniteAutomata()
+	# AF2.load("../Testes/automato_finito_8.afd")
 	# AFD_minimizer(AF1)
-	Re = AF1.union(AF2)
-	AF1.show()
+	# Re = AF1.union(AF2)
+	# AF1.show()
 
 	# Re = AFND_determinizer(R)
-	Re.show()
+	# Re.show()
 	# AFND = NDFiniteAutomata()
 	# AFND.load("../Testes/afndsem&.afnd")
 	# AFND.show()
@@ -24,6 +24,9 @@ def main():
 	# AFND.load('AFND_json')
 	# AFND.show()
 	# print(AFND.eClosure({"3"}))
+
+	# a) Lendo, salvando e carregando uma ER
+	ER = RegularGrammar()
 
 	# a) Lendo, salvando e carregando uma GR
 	# GR = RegularGrammar()
@@ -56,10 +59,10 @@ def main():
 	# print(recognized)
 
 	# e) Minimização de AFD
-	# AFD = FiniteAutomata()
-	# AFD.read("../Testes/automato_finito_7.txt")
-	# AFD_min = AFD_minimizer(AFD)
-	# # AFD_min.show()
+	AFD = FiniteAutomata()
+	AFD.load("../Testes/automato_finito_7.txt")
+	AFD_min = AFD_minimizer(AFD)
+	AFD_min.show()
 
 	pass
 

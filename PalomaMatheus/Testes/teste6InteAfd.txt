@@ -1,0 +1,12 @@
+4
+S
+A
+a,b
+S,a,A
+S,b,B
+A,a,S
+A,b,C
+B,a,C
+B,b,S
+C,a,B
+C,b,A

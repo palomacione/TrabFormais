@@ -1,6 +1,7 @@
 from GR import RegularGrammar
 from AF import *
 from collections import defaultdict
+import copy
 
 # Converte AFD para GR
 def AFD_to_GR(AFD):
@@ -257,3 +258,95 @@ def ER_to_AFD(ER):
 	er = ER.regex['er']
 	print(ER)
 	# TODO
+
+# Realiza a fatoração de um GLC
+def GLC_remove_left_recursion(GLC_with_recursion):
+	GLC = copy.deepcopy(GLC_with_recursion)
+
+	# Ordenando a lista A
+	# Exemplo de formato ordenado: S'', S', S, A, B, C...
+	A_unsorted = sorted(list(GLC.non_terminals))
+	A = []
+	for symbol in A_unsorted:
+		if symbol[0] != 'S':
+			A.append(symbol)
+		else:
+			A.insert(0, symbol)
+
+	# Eliminando recursividade à esquerda
+	for i in range(len(A)):
+
+		# Recursões indiretas
+		for j in range(i):
+			# Para todos os símbolos em A[i]
+			alpha = ''
+			production = ''
+			found = False
+			if A[i] in GLC.rules:
+				for p in GLC.rules[A[i]]:
+					# Se A[j]alpha pertence a uma das produções de A[i]
+					if len(p) > 1 and p[0] == A[j]:
+						# Armazenando alpha
+						alpha = p[1:]
+						# Produção a ser removida
+						production = p
+						# Avisa que produção foi encontrada
+						found = True
+						break
+				if found:
+					#  Removendo produção de A[i]
+					GLC.rules[A[i]].remove(production)
+				Aj_body = GLC.rules.get(A[j])
+				# Se A[j] existir como cabeça
+				if Aj_body:
+					# Adicione todas as produções de A[j] (concatenado com alpha)
+					# no corpo de A[i]
+					for p in Aj_body:
+						GLC.rules[A[i]].add(p + alpha)
+
+		# Recursões diretas
+		new_head = A[i] + "'"
+		new_body = set()
+		to_keep = set()
+		# Caso o terminal seja cabeça de alguma produção
+		if A[i] in GLC.rules:
+			for p in GLC.rules[A[i]]:
+				# Se houver recursão direta à esquerda da produção
+				if p[0] == A[i]:
+					# Adicione o restante da produção mais a nova cabeça no novo corpo
+					new_body.add(p[1:] + new_head)
+				else:
+					to_keep.add(p + new_head)
+			# Se alguma recursão direta foi encontrada atualize as cabeças
+			if new_body:
+				GLC.rules[A[i]] = to_keep
+				new_body.add('&')
+				GLC.rules[new_head] = new_body
+
+	return GLC
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#

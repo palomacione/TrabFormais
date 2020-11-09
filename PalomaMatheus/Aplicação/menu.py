@@ -1,4 +1,4 @@
-from conversoes import AFD_to_GR, GR_to_AFND, AFD_minimizer, AFND_determinizer, ER_to_AFD
+from conversoes import AFD_to_GR, GR_to_AFND, AFD_minimizer, AFND_determinizer, ER_to_AFD, GLC_remove_left_recursion
 from GR import RegularGrammar
 from ER import RegularExpression
 from AF import *
@@ -73,7 +73,7 @@ class Menu():
 				GR = RegularGrammar()
 				GR.load(ext + input_file)
 				AFND = GR_to_AFND(GR)
-				AFND.save(ext + output_file) # TODO NOT WORKING
+				AFND.save(ext + output_file)
 
 				print('\nSua GR de entrada foi:\n')
 				GR.show()
@@ -150,6 +150,21 @@ class Menu():
 				AFD_2.show()
 				print('\nSeu AFD com interseção realizada de saída é:\n')
 				AFD_intersection.show()
+
+			elif option == 'j': # Eliminação de recursão à esquerda
+
+				input_file = input('Nome do arquivo de entrada: ')
+				output_file = input('Nome do arquivo de saída: ')
+
+				GLC = RegularGrammar()
+				GLC.load(ext + input_file)
+				GLC_no_left_recursion = GLC_remove_left_recursion(GLC)
+				GLC_no_left_recursion.save(ext + output_file)
+
+				print('\nSua GLC de entrada foi:\n')
+				GLC.show()
+				print('\nSua GLC sem recursão à esquerda de saída é:\n')
+				GLC_no_left_recursion.show()
 
 			else:
 				print('Opção ainda não implementada ou opção inexistente')

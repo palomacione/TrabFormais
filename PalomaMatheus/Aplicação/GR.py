@@ -21,7 +21,7 @@ class RegularGrammar():
 				formatted_body.append(' | ')
 			formatted_body = formatted_body[:-1]
 			formatted_body = "".join(formatted_body)
-			formatted.append(f'{head} -> {formatted_body}')
+			formatted.append(f'{head} -> {formatted_body}\n')
 
 		print("".join(formatted))
 

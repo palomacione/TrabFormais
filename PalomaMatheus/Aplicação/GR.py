@@ -47,12 +47,11 @@ class RegularGrammar():
 		for head, body in self.rules.items():
 			for symbols in body:
 				for char in symbols:
-					if char.islower():
+					if char.islower() or char == '&':
 						self.terminals.add(char)
-					else:
+					elif char.isupper():
 						self.non_terminals.add(char)
-			for char in head:
-				self.non_terminals.add(char)
+			self.non_terminals.add(head)
 
 	# Salva a GR em um arquivo json local
 	def save(self, filename):

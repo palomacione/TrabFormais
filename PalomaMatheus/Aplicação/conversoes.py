@@ -2,6 +2,7 @@ from GR import RegularGrammar
 from AF import *
 from collections import defaultdict
 import copy
+from itertools import combinations
 
 # Converte AFD para GR
 def AFD_to_GR(AFD):
@@ -259,7 +260,7 @@ def ER_to_AFD(ER):
 	print(ER)
 	# TODO
 
-# Realiza a fatoração de um GLC
+# Realiza a fatoração da GLC
 def GLC_remove_left_recursion(GLC_with_recursion):
 	GLC = copy.deepcopy(GLC_with_recursion)
 
@@ -279,30 +280,26 @@ def GLC_remove_left_recursion(GLC_with_recursion):
 		# Recursões indiretas
 		for j in range(i):
 			# Para todos os símbolos em A[i]
-			alpha = ''
-			production = ''
-			found = False
+			alphas = []
+			productions = []
 			if A[i] in GLC.rules:
 				for p in GLC.rules[A[i]]:
 					# Se A[j]alpha pertence a uma das produções de A[i]
 					if len(p) > 1 and p[0] == A[j]:
 						# Armazenando alpha
-						alpha = p[1:]
+						alphas.append(p[1:])
 						# Produção a ser removida
-						production = p
-						# Avisa que produção foi encontrada
-						found = True
-						break
-				if found:
+						productions.append(p)
+				for k in range(len(productions)):
 					#  Removendo produção de A[i]
-					GLC.rules[A[i]].remove(production)
-				Aj_body = GLC.rules.get(A[j])
-				# Se A[j] existir como cabeça
-				if Aj_body:
-					# Adicione todas as produções de A[j] (concatenado com alpha)
-					# no corpo de A[i]
-					for p in Aj_body:
-						GLC.rules[A[i]].add(p + alpha)
+					GLC.rules[A[i]].remove(productions[k])
+					Aj_body = GLC.rules.get(A[j])
+					# Se A[j] existir como cabeça
+					if Aj_body:
+						# Adicione todas as produções de A[j] (concatenado com alpha)
+						# no corpo de A[i]
+						for p in Aj_body:
+							GLC.rules[A[i]].add(p + alphas[k])
 
 		# Recursões diretas
 		new_head = A[i] + "'"
@@ -325,14 +322,102 @@ def GLC_remove_left_recursion(GLC_with_recursion):
 
 	return GLC
 
+# Remove as &-produções da GLC
+def GLC_remove_e_productions(GLC_with_e_productions):
+	GLC = copy.deepcopy(GLC_with_e_productions)
+
+	# Criando o cojunto E (conjunto dos &-não-terminais)
+	E = {'&'}
+	new_head_added = True
+	# Enquanto E ainda continua mudando, ou seja, enquanto ainda há N sendo encontrados
+	while new_head_added:
+		new_head_added = False
+		# Passe por todas as produções
+		for head, body in GLC.rules.items():
+			# Passe por todas as produções que ainda não estão em E
+			if head not in E:
+				# Se alguma produção for totalmente marcada, adicione sua cabeça à E
+				for production in body:
+					for symbol in production:
+						if symbol.isupper() and symbol not in E:
+							break
+					else:
+						new_head_added = True
+						E.add(head)
 
 
+	# Removendo as &-produções e incluindo novas produções
+	# Passando por todas as regras
+	for head, body in GLC.rules.items():
+		new_productions = set()
+		for production in body:
+			# As produções que a regra já tinha são mantidas
+			if production != '&':
+				new_productions.add(production)
+				# Se a produção tiver um símbolo (ou conjunto de
+				# símbolos, por isso a utilização de combinations)
+				# que está em E então descarte tal símbolo da produção e
+				# adicione o restante da produção como uma nova produção
+				if len(production) > 1:
+					to_remove = []
+					for symbol in production:
+						if symbol in E:
+							to_remove.append(symbol)
+					to_remove = ''.join(to_remove)
+					to_remove = [''.join(l) for i in range(len(to_remove)) for l in combinations(to_remove, i+1)]
+					for symbols in to_remove:
+						new_production = production.replace(symbols, '')
+						if new_production != "":
+							new_productions.add(new_production)
+		# Atualiza as produções antigas (que continham &-produções)
+		GLC.rules[head] = new_productions
 
+	# Se o estado inicial pertence ao conjunto E
+	if GLC.initial_state in E:
+		new_initial_state = GLC.initial_state + "'"
+		GLC.rules[new_initial_state] = {GLC.initial_state, '&'}
+		GLC.non_terminals.add(new_initial_state)
 
+	GLC.show()
 
+# Remove as produções unitárias da GLC
+def GLC_remove_unitary_productions(GLC_with_unitary_productions):
 
+	# Passa por todos as produções de uma regra e recursivamente entra
+	# em não-terminal isolados para adicionar suas produções
+	def search_productions(head, body):
+		visited_heads.add(head)
+		for production in body:
+			# Se for um não-terminal isolado ainda não visitado
+			if len(production) == 1 and production in GLC.non_terminals and production not in visited_heads:
+				search_productions(production, GLC.rules[production])
+			elif production not in GLC.non_terminals:
+				new_rules[master_head].add(production)
 
+	GLC = copy.deepcopy(GLC_with_unitary_productions)
 
+	# Novas regras da gramática serão armazenadas em new_rules
+	new_rules = {}
+	for head in GLC.rules.keys():
+		new_rules[head] = set()
+
+	# Usado para saber em qual cabeça adicionar a nova produção
+	master_head = ''
+
+	for head, body in GLC.rules.items():
+		master_head = head
+		# Usado para evitar loop infinito
+		visited_heads = set()
+		search_productions(head, body)
+
+	GLC.rules = new_rules
+
+	GLC.show()
+	return GLC
+
+# Remove os símbolos não produtivos
+def GLC_remove_unproductive_symbols(GLC_with_unitary_productions):
+	pass
 
 
 

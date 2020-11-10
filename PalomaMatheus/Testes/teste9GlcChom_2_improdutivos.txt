@@ -1,0 +1,7 @@
+S -> aASbC | BeD | BE
+A -> aAbC | CD | &
+B -> bB | aAc
+C -> bCb | AcA
+D -> dD | eF | c
+E -> eFc | eE | FB
+F -> EF | dD

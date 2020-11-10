@@ -369,16 +369,22 @@ def GLC_remove_e_productions(GLC_with_e_productions):
 						new_production = production.replace(symbols, '')
 						if new_production != "":
 							new_productions.add(new_production)
-		# Atualiza as produções antigas (que continham &-produções)
+		# Atualiza as produções antigas
 		GLC.rules[head] = new_productions
 
 	# Se o estado inicial pertence ao conjunto E
 	if GLC.initial_state in E:
+		# Salvando as regras antigas para deixar o estado final
+		# como primeiro elemento do dicionário
+		previous_rules = GLC.rules
+		GLC.rules = {}
 		new_initial_state = GLC.initial_state + "'"
 		GLC.rules[new_initial_state] = {GLC.initial_state, '&'}
+		GLC.rules.update(previous_rules)
 		GLC.non_terminals.add(new_initial_state)
+		GLC.initial_state = new_initial_state
 
-	GLC.show()
+	return GLC
 
 # Remove as produções unitárias da GLC
 def GLC_remove_unitary_productions(GLC_with_unitary_productions):
@@ -415,23 +421,152 @@ def GLC_remove_unitary_productions(GLC_with_unitary_productions):
 	GLC.show()
 	return GLC
 
-# Remove os símbolos não produtivos
-def GLC_remove_unproductive_symbols(GLC_with_unitary_productions):
-	pass
+# Remove os símbolos improdutivos
+def GLC_remove_unproductive_symbols(GLC_with_unproductive_symbols):
+	GLC = copy.deepcopy(GLC_with_unproductive_symbols)
 
+	SP = GLC.terminals.union('&')
 
+	new_symbol_added = True
+	# Enquanto ainda há novos símbolos sendo adicionados em SP
+	while new_symbol_added:
+		new_symbol_added = False
+		# Percorre todas as cabeças que ainda não estão em SP
+		for head, body in GLC.rules.items():
+			if head not in SP:
+				for production in body:
+					for symbol in production:
+						# Se algum dos símbolos da produção não está em SP
+						# então a produção não está totalmente marcada
+						# portanto não podemos adicionar a cabeça em SP
+						if symbol not in SP:
+							break
+						# Caso todos os símbolos de uma produção estejam marcados
+						# então adicione a cabeça em SP
+					else:
+						new_symbol_added = True
+						SP.add(head)
+						# Basta que uma produção esteja totalmente marcada
+						break
 
+	# Remove os símbolos improdutivos
+	unproductives = GLC.non_terminals - SP
+	for unproductive in unproductives:
+		GLC.rules.pop(unproductive)
+	GLC.non_terminals = SP.intersection(GLC.non_terminals)
 
+	# Remove as produções que não foram totalmente marcadas
+	rules = defaultdict(set)
 
+	for head, body in GLC.rules.items():
+		for production in body:
+			for symbol in production:
+				# Se algum símbolo na produção não está marcado,
+				# não adicionamos a produção no corpo da regra
+				if symbol not in SP:
+					break
+			else:
+				rules[head].add(production)
 
+	GLC.rules = dict(rules)
 
+	return GLC
 
+# Remove os símbolos inalcançáveis
+def GLC_with_unreachable_symbols(GLC_with_unreachable_symbols):
+	GLC = copy.deepcopy(GLC_with_unreachable_symbols)
 
+	SA = {GLC.initial_state}
 
+	new_symbol_added = True
+	# Enquanto ainda há novos símbolos sendo adicionados em SA
+	while new_symbol_added:
+		new_symbol_added = False
+		for head, body in GLC.rules.items():
+			if head in SA:
+				for production in body:
+					for symbol in production:
+						if symbol not in SA:
+							new_symbol_added = True
+							SA.add(symbol)
 
+	# Remove os símbolos improdutivos
+	unreachables = GLC.non_terminals - SA
+	for unreachable in unreachables:
+		GLC.rules.pop(unreachable)
+	GLC.non_terminals = SA.intersection(GLC.non_terminals)
+	GLC.terminals = SA.intersection(GLC.terminals)
 
+	# Remove as produções que não foram totalmente marcadas
+	rules = defaultdict(set)
 
+	for head, body in GLC.rules.items():
+		for production in body:
+			for symbol in production:
+				# Se algum símbolo na produção não está marcado,
+				# não adicionamos a produção no corpo da regra
+				if symbol not in SA:
+					break
+			else:
+				rules[head].add(production)
 
+	GLC.rules = dict(rules)
 
+	return GLC
 
-#
+# INCOMPLETO
+# Remove os símbolos inalcançáveis
+def GLC_factoring(GLC_not_factored):
+	GLC = copy.deepcopy(GLC_not_factored)
+
+	# Remove os ND diretos
+	def remove_direct_ND(GLC):
+		new_list_of_rules = []
+
+		for head, body in GLC.rules.items():
+			new_rules = {}
+			new_rules[head] = body
+			poss_new_productions = defaultdict(set)
+
+			# Monta as possíveis novas produções
+			for production in body:
+				if production[0] in GLC.terminals:
+					if len(production) == 1:
+						poss_new_productions[production[0]].add('&')
+					else:
+						poss_new_productions[production[0]].add(production[1:])
+
+			# Checa se realmente há ND direto, sabendo que precisamos
+			# de mais de uma produção que começa com o mesmo símbolo terminal
+			for terminal, new_productions in poss_new_productions.items():
+				# Se encontramos um ND direto
+				if len(new_productions) > 1:
+					# Construímos a nova produção
+					new_head = head
+					while True:
+						new_head += "'"
+						if new_head not in GLC.rules.keys() and new_head not in new_rules.keys():
+							break
+					# Excluímos as produções antigas
+					to_remove = set()
+					for production in new_productions:
+						if production != '&':
+							to_remove.add(terminal + production)
+						else:
+							to_remove.add(terminal)
+					# Incluímos a produção nova
+					to_add = terminal + new_head
+					# Armazenamos as mudanças
+					new_rules[head] = new_rules[head] - to_remove
+					new_rules[head].add(to_add)
+					new_rules[new_head] = new_productions
+
+			new_list_of_rules.append(new_rules)
+
+		# Atualiza a GLC
+		rules = {}
+		for rule in new_list_of_rules:
+			rules.update(rule)
+		GLC.rules = rules
+
+	remove_direct_ND(GLC)

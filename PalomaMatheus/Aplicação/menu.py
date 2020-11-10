@@ -1,4 +1,4 @@
-from conversoes import AFD_to_GR, GR_to_AFND, AFD_minimizer, AFND_determinizer, ER_to_AFD, GLC_remove_left_recursion
+from conversoes import *
 from GR import RegularGrammar
 from ER import RegularExpression
 from AF import *
@@ -24,7 +24,12 @@ class Menu():
 			  'i - Transformação de GLC para uma GLC na forma normal de Chomsky\n',
 			  'j - Eliminação de recursão à esquerda\n',
 			  'k - Fatoração\n',
-			  'l - Reconhecimento de sentenças em AP\n')
+			  'l - Reconhecimento de sentenças em AP\n'
+			  'Extra:\n',
+			  'epsilon - Eliminação das e-produções\n',
+			  'unitarias - Eliminação das produções unitárias\n',
+			  'improdutivos - Eliminação dos símbolos improdutivos\n',
+			  'inalcancaveis - Eliminação dos símbolos inalcanáveis\n')
 
 	# Requisita continuamente por input do usuário para a execução
 	# dos algoritmos implementados no trabalho
@@ -128,7 +133,7 @@ class Menu():
 				AFD_1.show()
 				print('\nSeu AFD de entrada 2 foi:\n')
 				AFD_2.show()
-				print('\nSeu AFD com união realizada de saída é:\n')
+				print('\nSeu AFD de saída com união realizada é:\n')
 				AFD_union.show()
 
 			elif option == 'f2': # Interseção de AFD
@@ -148,7 +153,7 @@ class Menu():
 				AFD_1.show()
 				print('\nSeu AFD de entrada 2 foi:\n')
 				AFD_2.show()
-				print('\nSeu AFD com interseção realizada de saída é:\n')
+				print('\nSeu AFD de saída com interseção realizada é:\n')
 				AFD_intersection.show()
 
 			elif option == 'j': # Eliminação de recursão à esquerda
@@ -163,8 +168,68 @@ class Menu():
 
 				print('\nSua GLC de entrada foi:\n')
 				GLC.show()
-				print('\nSua GLC sem recursão à esquerda de saída é:\n')
+				print('\nSua GLC de saída sem recursão à esquerda é:\n')
 				GLC_no_left_recursion.show()
+
+			elif option == 'epsilon': # Eliminação das e-produções
+
+				input_file = input('Nome do arquivo de entrada: ')
+				output_file = input('Nome do arquivo de saída: ')
+
+				GLC = RegularGrammar()
+				GLC.load(ext + input_file)
+				GLC_no_e_productions = GLC_remove_e_productions(GLC)
+				GLC_no_e_productions.save(ext + output_file)
+
+				print('\nSua GLC de entrada foi:\n')
+				GLC.show()
+				print('\nSua GLC de saída sem e-produções é:\n')
+				GLC_no_e_productions.show()
+
+			elif option == 'unitarias': # Eliminação das produções unitárias
+
+				input_file = input('Nome do arquivo de entrada: ')
+				output_file = input('Nome do arquivo de saída: ')
+
+				GLC = RegularGrammar()
+				GLC.load(ext + input_file)
+				GLC_no_unitary_productions = GLC_remove_unitary_productions(GLC)
+				GLC_no_unitary_productions.save(ext + output_file)
+
+				print('\nSua GLC de entrada foi:\n')
+				GLC.show()
+				print('\nSua GLC de saída sem produções unitárias é:\n')
+				GLC_no_unitary_productions.show()
+
+			elif option == 'improdutivos': # Eliminação dos símbolos improdutivos
+
+				input_file = input('Nome do arquivo de entrada: ')
+				output_file = input('Nome do arquivo de saída: ')
+
+				GLC = RegularGrammar()
+				GLC.load(ext + input_file)
+				GLC_no_unproductive_symbols = GLC_remove_unproductive_symbols(GLC)
+				GLC_no_unproductive_symbols.save(ext + output_file)
+
+				print('\nSua GLC de entrada foi:\n')
+				GLC.show()
+				print('\nSua GLC de saída sem símbolos improdutivos é:\n')
+				GLC_no_unproductive_symbols.show()
+
+			elif option == 'inalcancaveis': # Eliminação dos símbolos inalcanáveis
+
+				input_file = input('Nome do arquivo de entrada: ')
+				output_file = input('Nome do arquivo de saída: ')
+
+				GLC = RegularGrammar()
+				GLC.load(ext + input_file)
+				GLC_no_unreachable_symbols = GLC_with_unreachable_symbols(GLC)
+				GLC_no_unreachable_symbols.save(ext + output_file)
+
+				print('\nSua GLC de entrada foi:\n')
+				GLC.show()
+				print('\nSua GLC de saída sem símbolos inalcanáveis é:\n')
+				GLC_no_unreachable_symbols.show()
 
 			else:
 				print('Opção ainda não implementada ou opção inexistente')

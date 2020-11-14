@@ -1,0 +1,6 @@
+S' -> & | S
+S -> Bd | d
+B -> bB' | AbB' | cB'
+A -> cB'cA' | aA' | bB'daA' | bB'cA' | cB'daA' | daA'
+B' -> & | cB'
+A' -> bB'daA' | & | bB'cA'

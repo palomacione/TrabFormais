@@ -1,0 +1,3 @@
+S -> Bd | &
+B -> Ab | Sc
+A -> Ba

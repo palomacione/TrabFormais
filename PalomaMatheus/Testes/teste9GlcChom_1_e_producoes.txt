@@ -1,3 +1,4 @@
-S -> AB | Sc
-A -> aA | &
-B -> bB | &
+S -> ABC
+A -> aA | BC
+B -> bB | C
+C -> cC | &

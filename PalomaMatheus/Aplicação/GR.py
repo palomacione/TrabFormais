@@ -9,6 +9,7 @@ class RegularGrammar():
 		self.initial_state = ''
 		self.terminals = set()
 		self.non_terminals = set()
+		self.heads_sorted = []
 
 	# Pretty print
 	def show(self):
@@ -51,6 +52,7 @@ class RegularGrammar():
 						self.terminals.add(char)
 					elif char.isupper():
 						self.non_terminals.add(char)
+			self.heads_sorted.append(head)
 			self.non_terminals.add(head)
 
 	# Salva a GR em um arquivo json local

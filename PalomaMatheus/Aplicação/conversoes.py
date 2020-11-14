@@ -264,15 +264,26 @@ def ER_to_AFD(ER):
 def GLC_remove_left_recursion(GLC_with_recursion):
 	GLC = copy.deepcopy(GLC_with_recursion)
 
-	# Ordenando a lista A
-	# Exemplo de formato ordenado: S'', S', S, A, B, C...
-	A_unsorted = sorted(list(GLC.non_terminals))
-	A = []
-	for symbol in A_unsorted:
-		if symbol[0] != 'S':
-			A.append(symbol)
-		else:
-			A.insert(0, symbol)
+	# Verifica se a GLC é &-livre
+	def epsilon_free(GLC):
+		# Encontra se há alguma &-produção (que não esteja no símbolo inicial da GLC)
+		for head, body in GLC.rules.items():
+			if head != GLC.initial_state:
+				for production in body:
+					if production == '&':
+						return False
+		return True
+
+	if not epsilon_free(GLC):
+		GLC = GLC_remove_e_productions(GLC)
+		print('\nSua GLC foi transformada em &-livre')
+		print('Sua nova GLC &-livre é:\n')
+		GLC.show()
+	else:
+		print('\nSua GLC é &-livre')
+
+	# Lista ordenada de cabeças A
+	A = GLC.heads_sorted
 
 	# Eliminando recursividade à esquerda
 	for i in range(len(A)):
@@ -339,12 +350,11 @@ def GLC_remove_e_productions(GLC_with_e_productions):
 				# Se alguma produção for totalmente marcada, adicione sua cabeça à E
 				for production in body:
 					for symbol in production:
-						if symbol.isupper() and symbol not in E:
+						if symbol not in E:
 							break
 					else:
 						new_head_added = True
 						E.add(head)
-
 
 	# Removendo as &-produções e incluindo novas produções
 	# Passando por todas as regras
@@ -366,7 +376,9 @@ def GLC_remove_e_productions(GLC_with_e_productions):
 					to_remove = ''.join(to_remove)
 					to_remove = [''.join(l) for i in range(len(to_remove)) for l in combinations(to_remove, i+1)]
 					for symbols in to_remove:
-						new_production = production.replace(symbols, '')
+						new_production = production
+						for symbol in symbols:
+							new_production = new_production.replace(symbol, '')
 						if new_production != "":
 							new_productions.add(new_production)
 		# Atualiza as produções antigas

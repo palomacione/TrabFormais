@@ -48,10 +48,10 @@ class RegularGrammar():
 		for head, body in self.rules.items():
 			for symbols in body:
 				for char in symbols:
-					if char.islower() or char == '&':
-						self.terminals.add(char)
-					elif char.isupper():
+					if char.isupper():
 						self.non_terminals.add(char)
+					elif char != "'":
+						self.terminals.add(char)
 			self.heads_sorted.append(head)
 			self.non_terminals.add(head)
 

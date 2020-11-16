@@ -1,6 +1,8 @@
-S' -> & | S
-S -> Bd | d
-B -> bB' | AbB' | cB'
-A -> cB'cA' | aA' | bB'daA' | bB'cA' | cB'daA' | daA'
-B' -> & | cB'
-A' -> bB'daA' | & | bB'cA'
+S -> dDC | cCC | aS'
+S' -> BC | DC
+A -> aD | cC
+B -> aB | dD
+C -> eC'
+C' -> A | C
+D -> eD' | fD
+D' -> AB | CB

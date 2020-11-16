@@ -170,6 +170,15 @@ class Menu():
 				GLC.show()
 				print('\nSua GLC de saída sem recursão à esquerda é:\n')
 				GLC_no_left_recursion.show()
+			
+			elif option == 'i': # Forma de Chomsky
+
+				input_file = input('Nome do arquivo de entrada: ')
+				output_file = input('Nome do arquivo de saída: ')
+				GLC = RegularGrammar()
+				GLC.load(ext + input_file)
+				GLC_chomsky = GLC_chomsky_normal_form(GLC)
+				GLC_chomsky.show()
 
 			elif option == 'epsilon': # Eliminação das e-produções
 

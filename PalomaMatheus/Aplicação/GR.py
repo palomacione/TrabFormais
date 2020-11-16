@@ -1,8 +1,7 @@
 import json
 from copy import deepcopy
 
-class RegularGrammar():
-
+class ContextFreeGrammar():
 	# Inicializador
 	def __init__(self):
 		self.rules = {}
@@ -48,10 +47,10 @@ class RegularGrammar():
 		for head, body in self.rules.items():
 			for symbols in body:
 				for char in symbols:
-					if char.islower() or char == '&':
-						self.terminals.add(char)
-					elif char.isupper():
+					if char.isupper():
 						self.non_terminals.add(char)
+					elif char != "'":
+						self.terminals.add(char)
 			self.heads_sorted.append(head)
 			self.non_terminals.add(head)
 
@@ -68,3 +67,12 @@ class RegularGrammar():
 				formatted_body = "".join(formatted_body)
 				formatted.append(f'{head} -> {formatted_body}\n')
 			writer.write("".join(formatted))
+
+	def addRule(self, head, body):
+		if head not in self.rules:
+			self.rules[head] = ''
+		self.rules[head] = body
+
+class RegularGrammar(ContextFreeGrammar):
+	def __init__(self):
+		super().__init__()

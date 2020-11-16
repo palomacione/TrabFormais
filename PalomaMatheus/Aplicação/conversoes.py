@@ -430,13 +430,11 @@ def GLC_remove_unitary_productions(GLC_with_unitary_productions):
 
 	GLC.rules = new_rules
 
-	GLC.show()
 	return GLC
 
 # Remove os símbolos improdutivos
 def GLC_remove_unproductive_symbols(GLC_with_unproductive_symbols):
 	GLC = copy.deepcopy(GLC_with_unproductive_symbols)
-
 	SP = GLC.terminals.union('&')
 
 	new_symbol_added = True
@@ -528,6 +526,78 @@ def GLC_with_unreachable_symbols(GLC_with_unreachable_symbols):
 
 # INCOMPLETO
 # Remove os símbolos inalcançáveis
+
+def rewrite_chomsky(GLC):
+	# Reescrevendo as produções para que toda produção com mais de dois simbolos tenha somente não terminais
+	terminals_list = copy.deepcopy(GLC.terminals) # Controle de criação dos novos estados
+	new_p_counter = 1  # A criação vai ser X1, X2, X3 ...
+	new_rules = copy.deepcopy(GLC.rules)
+
+	for head, body in GLC.rules.items():
+		for production in body:
+			if len(production) >= 2:  # Se minha produção tem mais de 2 símbolos
+				prods = list(production)
+				new_production = production
+				for i, symbol in enumerate(prods):  # Para cada símbolo da minha produção
+					if symbol in GLC.terminals: # Se meu símbolo é um não terminal e eu ainda não marquei ele
+						if symbol in terminals_list:
+							terminals_list.remove(symbol)  # "Marca" ele
+							new = "X{}".format(new_p_counter)  # Cria um novo estado que leva para esse terminal
+							GLC.non_terminals.add(new)
+							new_rules[new] = symbol
+							prods[i] = new
+							new_p_counter += 1						
+						else:    # Se já marquei, busque o estado que leva a esse terminal
+							key = list(new_rules.keys())[list(new_rules.values()).index(symbol)]
+							prods[i] = key
+				new_production = "".join(prods)
+				if production in new_rules[head]:
+					new_rules[head].remove(production)
+				new_rules[head].add(new_production)   #Adiciona a nova forma de produção
+
+	GLC.rules = new_rules
+	return GLC, new_p_counter
+
+def getNonTerminals(GLC, production):
+	prods = list(production)
+	for i, symbol in enumerate(production):
+		if symbol == "X":
+			prods[i] = prods[i]+prods[i+1]
+	for symbol in prods:
+		if symbol not in GLC.non_terminals:
+			prods.remove(symbol)
+	return prods
+
+def chomsky_cascate(GLC, counter):
+	#TODO
+	new_rules = copy.deepcopy(GLC.rules)
+	number_of_nt = 0
+	prods = []
+	for head, body in GLC.rules.items():
+		for production in body:
+			prods = getNonTerminals(GLC, production)
+			while (len(prods) >= 3):
+				new_production = prods.pop(0)+prods.pop(0)
+				new_production = "".join(new_production)
+				new = "X{}".format(counter)
+				new_p = "".join(prods)+new
+				print(new_p)
+				new_rules[new] = new_production
+				GLC.non_terminals.add(new)
+				new_rules[head].add(new_production)
+				counter += 1
+
+	GLC.rules = new_rules
+	return GLC
+				
+
+def GLC_chomsky_normal_form(GLC):
+	GLC = GLC_remove_e_productions(GLC)
+	GLC = GLC_remove_unitary_productions(GLC)
+	GLC = GLC_remove_unproductive_symbols(GLC)
+	GLC, counter = rewrite_chomsky(GLC)
+	# chomsky_cascate(GLC, counter)
+	return GLC
 def GLC_factoring(GLC_not_factored):
 	GLC = copy.deepcopy(GLC_not_factored)
 

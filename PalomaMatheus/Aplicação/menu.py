@@ -180,6 +180,21 @@ class Menu():
 				GLC_chomsky = GLC_chomsky_normal_form(GLC)
 				GLC_chomsky.show()
 
+			elif option == 'k': # Fatoração
+
+				input_file = input('Nome do arquivo de entrada: ')
+				output_file = input('Nome do arquivo de saída: ')
+
+				GLC = RegularGrammar()
+				GLC.load(ext + input_file)
+				GLC_no_nondeterminism = GLC_factoring(GLC)
+				GLC_no_nondeterminism.save(ext + output_file)
+
+				print('\nSua GLC de entrada foi:\n')
+				GLC.show()
+				print('\nSua GLC de saída sem não-determinismo é:\n')
+				GLC_no_nondeterminism.show()
+
 			elif option == 'epsilon': # Eliminação das e-produções
 
 				input_file = input('Nome do arquivo de entrada: ')

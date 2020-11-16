@@ -1,0 +1,15 @@
+Fatoração: -> 
+S -> aS' | cS''
+S'' -> CBD | CD | A | C
+A -> aD | cC
+B -> AB
+C -> Da
+D -> aA
+E -> & | c | aD
+F -> eF' | H
+G -> b | a
+H -> c
+ -> 
+Eliminando -> em | direta | S:
+F' -> & | G | FA
+S' -> DD | DBD | D | DA | AaD | &

@@ -260,27 +260,25 @@ def ER_to_AFD(ER):
 	print(ER)
 	# TODO
 
+# Verifica se a GLC é &-livre
+def epsilon_free(GLC):
+	# Encontra se há alguma &-produção (que não esteja no símbolo inicial da GLC)
+	for head, body in GLC.rules.items():
+		if head != GLC.initial_state:
+			for production in body:
+				if production == '&':
+					return False
+	return True
+
 # Realiza a fatoração da GLC
 def GLC_remove_left_recursion(GLC_with_recursion):
 	GLC = copy.deepcopy(GLC_with_recursion)
-
-	# Verifica se a GLC é &-livre
-	def epsilon_free(GLC):
-		# Encontra se há alguma &-produção (que não esteja no símbolo inicial da GLC)
-		for head, body in GLC.rules.items():
-			if head != GLC.initial_state:
-				for production in body:
-					if production == '&':
-						return False
-		return True
 
 	if not epsilon_free(GLC):
 		GLC = GLC_remove_e_productions(GLC)
 		print('\nSua GLC foi transformada em &-livre')
 		print('Sua nova GLC &-livre é:\n')
 		GLC.show()
-	else:
-		print('\nSua GLC é &-livre')
 
 	# Lista ordenada de cabeças A
 	A = GLC.heads_sorted
@@ -601,6 +599,35 @@ def GLC_chomsky_normal_form(GLC):
 def GLC_factoring(GLC_not_factored):
 	GLC = copy.deepcopy(GLC_not_factored)
 
+	print('\nRemovendo produções-& e recursão direta à esquerda (caso existir)')
+	print('Sua GLC transfomada é:')
+
+	# Eliminando recursão direta à esquerda
+	# Lista ordenada de cabeças A
+	A = GLC.heads_sorted
+	for i in range(len(A)):
+		# Recursões diretas
+		new_head = A[i] + "'"
+		new_body = set()
+		to_keep = set()
+		# Caso o terminal seja cabeça de alguma produção
+		if A[i] in GLC.rules:
+			for p in GLC.rules[A[i]]:
+				# Se houver recursão direta à esquerda da produção
+				if p[0] == A[i]:
+					# Adicione o restante da produção mais a nova cabeça no novo corpo
+					new_body.add(p[1:] + new_head)
+				else:
+					to_keep.add(p + new_head)
+			# Se alguma recursão direta foi encontrada atualize as cabeças
+			if new_body:
+				GLC.rules[A[i]] = to_keep
+				new_body.add('&')
+				GLC.rules[new_head] = new_body
+
+	GLC = GLC_remove_e_productions(GLC)
+	GLC.show()
+
 	# Remove os ND diretos
 	def remove_direct_ND(GLC):
 		new_list_of_rules = []
@@ -651,4 +678,71 @@ def GLC_factoring(GLC_not_factored):
 			rules.update(rule)
 		GLC.rules = rules
 
-	remove_direct_ND(GLC)
+		return GLC
+
+	# Remove os ND indiretos
+	def remove_indirect_ND(GLC):
+
+		# Identifica se há ND e retorna os terminais que geram o ND
+		def identify_ND_terminals(possible_new_ps):
+			counter = defaultdict(int)
+			for p in possible_new_ps:
+				counter[p[0]] += 1
+			nd_terminals = set()
+			for terminal, count in counter.items():
+				if count > 1:
+					nd_terminals.add(terminal)
+			return nd_terminals
+
+		# Entra recursivamente em produções que começam com não-terminais
+		# até encontrar apenas producções com terminais
+		def get_recursive(body):
+			new_ps_appended = set()
+			for production in body:
+				if production[0] in GLC.non_terminals:
+					new_ps_set = get_recursive(GLC.rules[production[0]])
+					for n_p in new_ps_set:
+						new_ps_appended.add(n_p + production[1:])
+				else:
+					new_ps_appended.add(production)
+			return new_ps_appended
+
+		# Elimina o ND
+		for head, body in GLC.rules.items():
+			# Faz o mapeamento da produção com todas as produções que ela consegue alcançar
+			map_prod_reaches = {}
+			for production in body:
+				production_aux = set()
+				production_aux.add(production)
+				map_prod_reaches[production] = get_recursive(production_aux)
+			# Cria as possíveis novas produções que seriam criadas caso todas participassem do ND
+			poss_new_productions = set()
+			for productions in map_prod_reaches.values():
+				poss_new_productions.update(productions)
+			# Se algum ND for identificado, um novo corpo é criado a o código encerra
+			nd_terminals = identify_ND_terminals(poss_new_productions)
+			new_body = set()
+			for production, reaches_productions in map_prod_reaches.items():
+				for r in reaches_productions:
+					if r[0] in nd_terminals:
+						new_body.update(reaches_productions)
+						break
+				else:
+					new_body.add(production)
+			# Se um ND foi encontrado
+			if new_body != body:
+				GLC.rules[head] = new_body
+		return GLC
+
+	previous_rules = GLC.rules
+	# Considera-se que entrou em loop caso haja 20 operaçõe de remoção de ND indireto
+	# e ND direto. Além disso caso as regras parem de se alterar, o método também para
+	for i in range(20):
+		GLC = remove_indirect_ND(GLC)
+		GLC = remove_direct_ND(GLC)
+		curret_rules = GLC.rules
+		if previous_rules == curret_rules:
+			break
+		previous_rules = copy.deepcopy(curret_rules)
+
+	return GLC

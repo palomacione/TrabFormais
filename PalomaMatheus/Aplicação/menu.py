@@ -156,6 +156,21 @@ class Menu():
 				print('\nSeu AFD de saída com interseção realizada é:\n')
 				AFD_intersection.show()
 
+			elif option == 'g': # Conversão ER para AFD
+
+				input_file = input('Nome do arquivo de entrada: ')
+				output_file = input('Nome do arquivo de saída: ')
+
+				ER = RegularExpression()
+				ER.load(ext + input_file)
+				AFD = ER_to_AFD(ER)
+				# AFD.save(ext + output_file)
+
+				print('\nSua ER de entrada foi:\n')
+				ER.show()
+				#print('\nSeu AFD de saída é:\n')
+				#AFD.show()
+
 			elif option == 'j': # Eliminação de recursão à esquerda
 
 				input_file = input('Nome do arquivo de entrada: ')
@@ -170,7 +185,7 @@ class Menu():
 				GLC.show()
 				print('\nSua GLC de saída sem recursão à esquerda é:\n')
 				GLC_no_left_recursion.show()
-			
+
 			elif option == 'i': # Forma de Chomsky
 
 				input_file = input('Nome do arquivo de entrada: ')

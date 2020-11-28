@@ -7,11 +7,11 @@ class RegularExpression():
 		self.regex = {}
 
 	# Pretty print
-	def __str__(self):
+	def show(self):
 		formatted = []
 		for left, right in self.regex.items():
 			formatted.append(f"{left}:{right}\n")
-		return "".join(formatted)
+		print("".join(formatted))
 
 	# Lê o arquivo
 	def load(self, file):
@@ -21,7 +21,7 @@ class RegularExpression():
 			for line in lines:
 				line = line.split(':')
 				left = line[0]
-				right = line[1]
+				right = line[1][1:]
 				self.regex[left] = right
 
 	# Salva a GR em um arquivo json local

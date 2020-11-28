@@ -256,12 +256,6 @@ def AFND_determinizer(AFND):
 
 	return AF
 
-# Converte ER para AFD
-def ER_to_AFD(ER):
-	er = ER.regex['er']
-	print(ER)
-	# TODO
-
 # Verifica se a GLC é &-livre
 def epsilon_free(GLC):
 	# Encontra se há alguma &-produção (que não esteja no símbolo inicial da GLC)
@@ -546,7 +540,7 @@ def rewrite_chomsky(GLC):
 							GLC.non_terminals.add(new)
 							new_rules[new] = symbol
 							prods[i] = new
-							new_p_counter += 1						
+							new_p_counter += 1
 						else:    # Se já marquei, busque o estado que leva a esse terminal
 							key = list(new_rules.keys())[list(new_rules.values()).index(symbol)]
 							prods[i] = key
@@ -606,7 +600,7 @@ def chomsky_cascate(GLC, counter):
 
 	GLC.rules = new_rules
 	return GLC
-				
+
 
 def GLC_chomsky_normal_form(GLC):
 	GLC.show()
@@ -766,3 +760,88 @@ def GLC_factoring(GLC_not_factored):
 		previous_rules = copy.deepcopy(curret_rules)
 
 	return GLC
+
+# Converte ER para AFD usando árvore sintática
+def ER_to_AFD(ER):
+	ER = ER.regex['er'] + '#'
+	print('ER entrada:', ER)
+
+	# Insere os símbolos de concatenação na ER
+	# Também conta a quantidade de nós folha
+	formatted_ER = []
+	n_leafs = 1
+	for i in range(len(ER)-1):
+		if ER[i].isalnum() and (ER[i+1].isalnum() or ER[i+1] == '('):
+			formatted_ER.append(ER[i])
+			formatted_ER.append('.')
+		elif ER[i].isalnum() and ER[i+1] == '#':
+			formatted_ER.append(ER[i])
+			formatted_ER.append('.')
+		elif ER[i] == '*' and ER[i+1] != '|':
+			formatted_ER.append(ER[i])
+			formatted_ER.append('.')
+		else:
+			formatted_ER.append(ER[i])
+		if ER[i].isalnum():
+			n_leafs += 1
+	ER = ''.join(formatted_ER) + '#'
+	print('ER com símbolos de concatenação:', ER)
+
+	# Usados para simplificar a construção da árvore
+	rights = []
+	for i in range(len(ER)):
+		if ER[i] == '*':
+			rights.insert(0, ER[i-1] + ER[i])
+		elif (ER[i].isalnum() and ER[i+1] != '*') or ER[i] == '#':
+			rights.insert(0, ER[i])
+
+	lefts = []
+	for i in range(len(ER)):
+		if ER[i] == '.' or ER[i] == '|':
+			lefts.insert(0, ER[i])
+
+	print(ER)
+
+	# Classe nodo
+	class Node():
+		def __init__(self, val, firstPos, lastPos, nullable):
+			self.val = val
+			self.firstPos = firstPos
+			self.lastPos = lastPos
+			self.left = None
+			self.right = None
+			self.nullable = nullable
+
+		def show(self):
+			print(f'Symbol: {self.val}')
+			print(f'FirstPos: {self.firstPos}')
+			print(f'LastPos: {self.lastPos}')
+			print(f'Left Child: {self.left.val}')
+			print(f'Right Child: {self.right.val}')
+			print(f'Nullable: {self.nullable}')
+
+	def print_postorder(root):
+		if root:
+			print_postorder(root.left)
+			print_postorder(root.right)
+			print(f'root.val: {root.val}\t root.firstPos: {root.firstPos}', end='\t')
+			print(f'root.lastPost: {root.lastPos}\t nullable: {root.nullable}')
+
+	# Construindo a árvore sintática
+	root = Node(lefts[0], firstPos=set(), lastPos=set(), nullable=False)
+	curr = root
+	for i in range(len(lefts)-1):
+		if len(rights[i]) == 1:
+			curr.right = Node(rights[i], firstPos=(n_leafs), lastPos=(n_leafs), nullable=False)
+			n_leafs -= 1
+		else:
+			curr.right = Node(rights[i][-1], firstPos=set(), lastPos=set(), nullable=True)
+			curr.right.left = Node(rights[i][-2], firstPos=(n_leafs), lastPos=(n_leafs), nullable=False)
+			n_leafs -= 1
+		curr.left = Node(lefts[i+1], firstPos=set(), lastPos=set(), nullable=False)
+		curr = curr.left
+
+	curr.right = Node(rights[-2], firstPos=(n_leafs), lastPos=(n_leafs), nullable=False)
+	n_leafs -= 1
+	curr.left = Node(rights[-1], firstPos=(n_leafs), lastPos=(n_leafs), nullable=False)
+	print_postorder(root)

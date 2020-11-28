@@ -5,6 +5,8 @@ import copy
 from itertools import combinations
 
 # Converte AFD para GR
+
+
 def AFD_to_GR(AFD):
 	GR = RegularGrammar()
 
@@ -569,32 +571,50 @@ def getNonTerminals(GLC, production):
 def chomsky_cascate(GLC, counter):
 	#TODO
 	new_rules = copy.deepcopy(GLC.rules)
-	number_of_nt = 0
 	prods = []
+	is_new_production = set()
 	for head, body in GLC.rules.items():
 		for production in body:
+			before = production
 			prods = getNonTerminals(GLC, production)
 			while (len(prods) >= 3):
-				new_production = prods.pop(0)+prods.pop(0)
+				# print("A lista é", prods)
+				new_production = prods.pop(1) + prods.pop(1)
 				new_production = "".join(new_production)
-				new = "X{}".format(counter)
-				new_p = "".join(prods)+new
-				print(new_p)
-				new_rules[new] = new_production
-				GLC.non_terminals.add(new)
-				new_rules[head].add(new_production)
-				counter += 1
+				if new_production in is_new_production:  # Se a produção já existe, pego a cabeça q produz ela
+					key = list(new_rules.keys())[list(new_rules.values()).index({new_production})]
+					new_p = "".join(prods)+key  # Junto a produção Ex: (E + X1 -> EX1)
+					if before in new_rules[head]:
+						new_rules[head].remove(before)
+					new_rules[head].add(new_p)
+
+				else:
+					is_new_production.add(new_production)  # Se não, adiciono na lista
+					# print("Estados a serem reescritos", new_production)
+					new = "X{}".format(counter)  # Crio uma nova cabeça
+					GLC.non_terminals.add(new)   # Coloco a cabeça no meu conjunto de não terminais
+					new_p = "".join(prods)+new   # Junto a produção
+					# print("Nova produção é", new_p)
+					counter += 1 # Somo o contador de novos estados
+					new_rules[new] = {new_production}  # A nova cabeça agora possui aquela produção
+					# print(head, "recebe", new_p)
+					if before in new_rules[head]:
+						new_rules[head].remove(before)
+					new_rules[head].add(new_p)
+					# print(new_rules)
+
 
 	GLC.rules = new_rules
 	return GLC
 				
 
 def GLC_chomsky_normal_form(GLC):
+	GLC.show()
 	GLC = GLC_remove_e_productions(GLC)
 	GLC = GLC_remove_unitary_productions(GLC)
 	GLC = GLC_remove_unproductive_symbols(GLC)
 	GLC, counter = rewrite_chomsky(GLC)
-	# chomsky_cascate(GLC, counter)
+	chomsky_cascate(GLC, counter)
 	return GLC
 def GLC_factoring(GLC_not_factored):
 	GLC = copy.deepcopy(GLC_not_factored)

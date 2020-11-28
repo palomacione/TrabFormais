@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from collections import defaultdict
 
 class ContextFreeGrammar():
 	# Inicializador
@@ -28,6 +29,7 @@ class ContextFreeGrammar():
 	# Lê o arquivo
 	def load(self, file):
 		# Preenche a variável rules
+		i = 0
 		with open(file, 'r') as f:
 			lines = [line.rstrip() for line in f]
 			for line in lines:
@@ -38,6 +40,7 @@ class ContextFreeGrammar():
 				for symbol in line[2:]:
 					if symbol != '|':
 						body.add(symbol)
+						i += 1
 				self.rules[head] = body
 
 		# Preenche o símbolo inicial

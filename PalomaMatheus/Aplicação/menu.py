@@ -1,6 +1,6 @@
 from conversoes import *
-from GR import RegularGrammar
-from ER import RegularExpression
+from GR import *
+from ER import *
 from AF import *
 
 class Menu():
@@ -209,6 +209,22 @@ class Menu():
 				GLC.show()
 				print('\nSua GLC de saída sem não-determinismo é:\n')
 				GLC_no_nondeterminism.show()
+
+			elif option == 'l': # Reconhecimento em AP
+
+				input_file = input('Nome do arquivo de entrada: ')
+				sentenca = input('Sentença a ser reconhecida (com símbolo de final de sentença): ')
+
+				GLC = ContextFreeGrammar()
+				GLC.load(ext + input_file)
+				accepted = recognizer_AP(GLC, sentenca)
+
+				print('\nSua GLC de entrada foi:\n')
+				GLC.show()
+				if accepted:
+					print('\nA sentença foi aceita')
+				else:
+					print('\nA sentença não foi aceita')
 
 			elif option == 'epsilon': # Eliminação das e-produções
 

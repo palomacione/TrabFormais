@@ -1,8 +1,11 @@
 from GR import RegularGrammar
 from AF import *
+from ER import *
 from collections import defaultdict
 import copy
 from itertools import combinations
+from typing import List, NamedTuple
+from textwrap import  indent
 
 # Converte AFD para GR
 
@@ -77,6 +80,7 @@ def GR_to_AFND(GR):
 	return AFND
 
 # Minimiza o AFD
+
 def AFD_minimizer(AFD):
 
 	# Eliminando os estados inalcançáveis
@@ -131,7 +135,7 @@ def AFD_minimizer(AFD):
 	next_equivalencies = []
 	equivalencies_control = equivalencies[:]
 	# Equanto houver mudanças nas classes de equivalência
-	while (True):
+	while True:
 		for char in AFD.alphabet:
 			equivalencies_prev = []
 			for equivalent in equivalencies:
@@ -521,6 +525,7 @@ def GLC_with_unreachable_symbols(GLC_with_unreachable_symbols):
 # INCOMPLETO
 # Remove os símbolos inalcançáveis
 
+
 def rewrite_chomsky(GLC):
 	# Reescrevendo as produções para que toda produção com mais de dois simbolos tenha somente não terminais
 	terminals_list = copy.deepcopy(GLC.terminals) # Controle de criação dos novos estados
@@ -552,6 +557,7 @@ def rewrite_chomsky(GLC):
 	GLC.rules = new_rules
 	return GLC, new_p_counter
 
+
 def getNonTerminals(GLC, production):
 	prods = list(production)
 	for i, symbol in enumerate(production):
@@ -562,8 +568,8 @@ def getNonTerminals(GLC, production):
 			prods.remove(symbol)
 	return prods
 
+
 def chomsky_cascate(GLC, counter):
-	#TODO
 	new_rules = copy.deepcopy(GLC.rules)
 	prods = []
 	is_new_production = set()
@@ -610,6 +616,7 @@ def GLC_chomsky_normal_form(GLC):
 	GLC, counter = rewrite_chomsky(GLC)
 	chomsky_cascate(GLC, counter)
 	return GLC
+
 def GLC_factoring(GLC_not_factored):
 	GLC = copy.deepcopy(GLC_not_factored)
 
@@ -761,87 +768,102 @@ def GLC_factoring(GLC_not_factored):
 
 	return GLC
 
-# Converte ER para AFD usando árvore sintática
-def ER_to_AFD(ER):
-	ER = ER.regex['er'] + '#'
-	print('ER entrada:', ER)
-
+def format_er(ER):
 	# Insere os símbolos de concatenação na ER
 	# Também conta a quantidade de nós folha
 	formatted_ER = []
 	n_leafs = 1
-	for i in range(len(ER)-1):
-		if ER[i].isalnum() and (ER[i+1].isalnum() or ER[i+1] == '('):
+	for i in range(len(ER) - 1):
+		if ER[i].isalnum() and (ER[i + 1].isalnum() or ER[i + 1] == '('):
 			formatted_ER.append(ER[i])
 			formatted_ER.append('.')
-		elif ER[i].isalnum() and ER[i+1] == '#':
+		elif ER[i].isalnum() and ER[i + 1] == '#':
 			formatted_ER.append(ER[i])
 			formatted_ER.append('.')
-		elif ER[i] == '*' and ER[i+1] != '|':
+		elif ER[i] == '*' and ER[i + 1] != '|':
 			formatted_ER.append(ER[i])
 			formatted_ER.append('.')
 		else:
 			formatted_ER.append(ER[i])
 		if ER[i].isalnum():
 			n_leafs += 1
-	ER = ''.join(formatted_ER) + '#'
-	print('ER com símbolos de concatenação:', ER)
+	ER = ''.join(formatted_ER) + "#"
+	return ER
 
-	# Usados para simplificar a construção da árvore
-	rights = []
-	for i in range(len(ER)):
-		if ER[i] == '*':
-			rights.insert(0, ER[i-1] + ER[i])
-		elif (ER[i].isalnum() and ER[i+1] != '*') or ER[i] == '#':
-			rights.insert(0, ER[i])
-
-	lefts = []
-	for i in range(len(ER)):
-		if ER[i] == '.' or ER[i] == '|':
-			lefts.insert(0, ER[i])
-
-	print(ER)
-
-	# Classe nodo
-	class Node():
-		def __init__(self, val, firstPos, lastPos, nullable):
-			self.val = val
-			self.firstPos = firstPos
-			self.lastPos = lastPos
-			self.left = None
-			self.right = None
-			self.nullable = nullable
-
-		def show(self):
-			print(f'Symbol: {self.val}')
-			print(f'FirstPos: {self.firstPos}')
-			print(f'LastPos: {self.lastPos}')
-			print(f'Left Child: {self.left.val}')
-			print(f'Right Child: {self.right.val}')
-			print(f'Nullable: {self.nullable}')
-
-	def print_postorder(root):
-		if root:
-			print_postorder(root.left)
-			print_postorder(root.right)
-			print(f'root.val: {root.val}\t root.firstPos: {root.firstPos}', end='\t')
-			print(f'root.lastPost: {root.lastPos}\t nullable: {root.nullable}')
-
-	# Construindo a árvore sintática
-	root = Node(lefts[0], firstPos=set(), lastPos=set(), nullable=False)
-	curr = root
-	for i in range(len(lefts)-1):
-		if len(rights[i]) == 1:
-			curr.right = Node(rights[i], firstPos=(n_leafs), lastPos=(n_leafs), nullable=False)
-			n_leafs -= 1
+def convertRPN(er):
+	stack = []
+	output = []
+	operands = ["|", ".", "*", "?", "+"]
+	precedencia = {".": 1, "|": 0}
+	postfix = ["?", "*", "+"]
+	prefix = ["|", "."]
+	for symbol in er:
+		if symbol in operands:
+			if symbol in postfix:
+				output.append(symbol)
+			elif symbol in prefix:
+				print(symbol)
+				print("Stack com", symbol, stack)
+				if len(stack) != 0:
+					while precedencia[stack[-1]] >= precedencia[symbol]:
+							output.append(stack.pop())
+							if len(stack) == 0:
+								break
+				stack.append(symbol)
+		elif symbol == "(":
+			stack.append(symbol)
+		elif symbol == ")":
+			while stack[-1] != "(":
+				output.append(stack.pop())
+			stack.pop()
 		else:
-			curr.right = Node(rights[i][-1], firstPos=set(), lastPos=set(), nullable=True)
-			curr.right.left = Node(rights[i][-2], firstPos=(n_leafs), lastPos=(n_leafs), nullable=False)
-			n_leafs -= 1
-		curr.left = Node(lefts[i+1], firstPos=set(), lastPos=set(), nullable=False)
-		curr = curr.left
+			output.append(symbol)
+	while len(stack) != 0:
+		output.append(stack.pop())
+	return output
 
-	curr.right = Node(rights[-2], firstPos=(n_leafs), lastPos=(n_leafs), nullable=False)
-	n_leafs -= 1
-	curr.left = Node(rights[-1], firstPos=(n_leafs), lastPos=(n_leafs), nullable=False)
-	print_postorder(root)
+def post_to_pre(ER):
+	pre = []
+	for symbol in ER[::-1]:
+		pre.append(symbol)
+	return pre
+
+def construct_tree(ER):
+	BINARY_OPS = [".", "|"]
+	UNARY_OPS = ["*", "?", "+"]
+	class Node(NamedTuple):
+		span: str
+		value: str
+		children: List["Node"]
+
+		def __repr__(self):
+			out = self.value + '\n'
+			out += indent('\n'.join(repr(c) for c in self.children), ' ' * 4)
+			return out
+
+	def parse(s):
+		print(s)
+		if s[0] in BINARY_OPS:
+			lhs = parse(s[1:])
+			lhs_end = 1 + len(lhs.span)
+
+			rhs = parse(s[lhs_end:])
+			rhs_end = lhs_end + len(rhs.span)
+			return Node(s[:rhs_end], s[0], [rhs, lhs])
+		elif s[0] in UNARY_OPS:
+			operand = parse(s[1:])
+			end = 1 + len(operand.span)
+			return Node(s[:end], s[0], [operand])
+		else:
+			return Node(s[0], s[0], [])
+	new_ER = parse("".join(ER))
+	return new_ER
+
+# Converte ER para AFD usando árvore sintática
+def ER_to_AFD(ER):
+	ER = ER.regex['er'] + "#"
+	regex = format_er(ER)
+	rpn_regex = convertRPN(regex)
+	prefixed = post_to_pre(rpn_regex)
+	new = construct_tree(prefixed)
+	print(new.__repr__())

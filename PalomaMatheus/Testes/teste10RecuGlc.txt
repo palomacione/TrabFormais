@@ -1,0 +1,4 @@
+S' -> S | &
+S -> Bd | d
+B -> Ab | Bc | b | c
+A -> Sa | a | Bc

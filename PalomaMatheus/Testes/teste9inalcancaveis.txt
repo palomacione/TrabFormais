@@ -1,0 +1,5 @@
+S -> Sa | A | c | Bb
+A -> Sa | a
+B -> Ab | Sc | d
+D -> bDc | bc
+E -> bBc

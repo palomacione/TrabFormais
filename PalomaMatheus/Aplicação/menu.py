@@ -20,7 +20,6 @@ class Menu():
 			  'f1 - União de AFD\n',
 			  'f2 - Interseção de AFD\n',
 			  'g - Conversão de ER para AFD\n',
-			  'h - Leitura, gravação e edição de GLC\n',
 			  'i - Transformação de GLC para uma GLC na forma normal de Chomsky\n',
 			  'j - Eliminação de recursão à esquerda\n',
 			  'k - Fatoração\n',

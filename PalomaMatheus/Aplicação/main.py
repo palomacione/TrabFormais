@@ -1,4 +1,6 @@
 from menu import Menu
+from GR import *
+from conversoes import *
 
 def main():
 	menu = Menu()

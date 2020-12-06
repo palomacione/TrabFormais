@@ -3,13 +3,9 @@ from AF import *
 from ER import *
 from collections import defaultdict
 import copy
-from itertools import combinations
-from typing import List, NamedTuple
-from textwrap import  indent
+from prettytable import PrettyTable
 
 # Converte AFD para GR
-
-
 def AFD_to_GR(AFD):
 	GR = RegularGrammar()
 
@@ -277,7 +273,7 @@ def GLC_remove_left_recursion(GLC_with_recursion):
 	if not epsilon_free(GLC):
 		GLC = GLC_remove_e_productions(GLC)
 		print('\nSua GLC foi transformada em &-livre')
-		print('Sua nova GLC &-livre é:\n')
+		print('Sua nova GLC &-livre é:')
 		GLC.show()
 
 	# Lista ordenada de cabeças A
@@ -329,6 +325,17 @@ def GLC_remove_left_recursion(GLC_with_recursion):
 				new_body.add('&')
 				GLC.rules[new_head] = new_body
 
+	# (adicionado posteriormente) Renova os não-terminais da GLC
+	# (adicionado posteriormente) Renova a haeds sorted da GLC
+	new_non_terminals = set()
+	new_heads_sorted = GLC.heads_sorted[:]
+	for non_terminal in GLC.rules.keys():
+		new_non_terminals.add(non_terminal)
+		if non_terminal not in new_heads_sorted:
+			new_heads_sorted.append(non_terminal)
+	GLC.non_terminals = new_non_terminals
+	GLC.heads_sorted = new_heads_sorted
+
 	return GLC
 
 # Remove as &-produções da GLC
@@ -347,12 +354,27 @@ def GLC_remove_e_productions(GLC_with_e_productions):
 			if head not in E:
 				# Se alguma produção for totalmente marcada, adicione sua cabeça à E
 				for production in body:
-					for symbol in production:
-						if symbol not in E:
+					i = 0
+					while i < len(production):
+						char = production[i]
+						# Considerando que pode haver não-terminais do tipo X'''...
+						while i+1 < len(production) and production[i+1] == "'":
+							char += "'"
+							i += 1
+						if char not in E:
 							break
+						i += 1
 					else:
 						new_head_added = True
 						E.add(head)
+
+	# Realiza o powerset de uma lista
+	def powerset(l):
+		x = len(l)
+		ps = []
+		for i in range(1 << x):
+			ps.append(''.join([l[j] for j in range(x) if (i & (1 << j))]))
+		return ps
 
 	# Removendo as &-produções e incluindo novas produções
 	# Passando por todas as regras
@@ -368,11 +390,17 @@ def GLC_remove_e_productions(GLC_with_e_productions):
 				# adicione o restante da produção como uma nova produção
 				if len(production) > 1:
 					to_remove = []
-					for symbol in production:
-						if symbol in E:
-							to_remove.append(symbol)
-					to_remove = ''.join(to_remove)
-					to_remove = [''.join(l) for i in range(len(to_remove)) for l in combinations(to_remove, i+1)]
+					i = 0
+					while i < len(production):
+						char = production[i]
+						# Considerando que pode haver não-terminais do tipo X'''...
+						while i+1 < len(production) and production[i+1] == "'":
+							char += "'"
+							i += 1
+						if char in E:
+							to_remove.append(char)
+						i += 1
+					to_remove = powerset(to_remove)
 					for symbols in to_remove:
 						new_production = production
 						for symbol in symbols:
@@ -603,7 +631,6 @@ def chomsky_cascate(GLC, counter):
 					new_rules[head].add(new_p)
 					# print(new_rules)
 
-
 	GLC.rules = new_rules
 	return GLC
 
@@ -802,13 +829,12 @@ def convertRPN(er):
 			if symbol in postfix:
 				output.append(symbol)
 			elif symbol in prefix:
-				print(symbol)
-				print("Stack com", symbol, stack)
 				if len(stack) != 0:
-					while precedencia[stack[-1]] >= precedencia[symbol]:
-							output.append(stack.pop())
-							if len(stack) == 0:
-								break
+					if stack[-1] in precedencia.keys():
+						while precedencia[stack[-1]] >= precedencia[symbol]:
+								output.append(stack.pop())
+								if len(stack) == 0:
+									break
 				stack.append(symbol)
 		elif symbol == "(":
 			stack.append(symbol)
@@ -831,34 +857,176 @@ def post_to_pre(ER):
 def construct_tree(ER):
 	BINARY_OPS = [".", "|"]
 	UNARY_OPS = ["*", "?", "+"]
-	class Node(NamedTuple):
-		span: str
-		value: str
-		children: List["Node"]
-
-		def __repr__(self):
-			out = self.value + '\n'
-			out += indent('\n'.join(repr(c) for c in self.children), ' ' * 4)
-			return out
-
 	def parse(s):
-		print(s)
 		if s[0] in BINARY_OPS:
 			lhs = parse(s[1:])
 			lhs_end = 1 + len(lhs.span)
-
 			rhs = parse(s[lhs_end:])
 			rhs_end = lhs_end + len(rhs.span)
-			return Node(s[:rhs_end], s[0], [rhs, lhs])
+			return Node(s[:rhs_end], s[0], [rhs, lhs], 0, 0)
 		elif s[0] in UNARY_OPS:
 			operand = parse(s[1:])
 			end = 1 + len(operand.span)
-			return Node(s[:end], s[0], [operand])
+			return Node(s[:end], s[0], [operand], 0, 0)
 		else:
-			return Node(s[0], s[0], [])
+			return Node(s[0], s[0], [], 0, 0)
 	new_ER = parse("".join(ER))
 	return new_ER
 
+def isLeaf(s):
+	if len(s.children) == 0:
+		return True
+
+def isNullable(s):
+	if s.value == "&":
+		return True
+	elif s.value == "|":
+		return isNullable(s.children[0]) or isNullable(s.children[1])
+	elif s.value == "*":
+		return True
+	elif s.value == ".":
+		return isNullable(s.children[0]) and isNullable(s.children[1])
+	elif s.value == "?":
+		return True
+	else:
+		return False
+
+counter = 1
+def parseLeaves(node):
+	if isLeaf(node):
+		global counter
+		node.fPos = counter
+		node.lPos = counter
+		counter +=1
+	else:
+		for c in node.children:
+			parseLeaves(c)
+
+def first_and_lastPos(symbol):
+	if symbol.fPos != 0 and symbol.lPos != 0:
+		return [symbol.fPos, symbol.lPos]
+	elif symbol.value == "*":
+		symbol.fPos = first_and_lastPos(symbol.children[0])[0]
+		symbol.lPos = symbol.fPos
+		return [symbol.fPos, symbol.lPos]
+	elif symbol.value == "|":
+		symbol.fPos = [first_and_lastPos(symbol.children[0])[0]]
+		symbol.fPos.append(first_and_lastPos(symbol.children[1])[0])
+		symbol.lPos = symbol.fPos
+		return [symbol.fPos, symbol.lPos]
+	elif symbol.value == ".":
+		if isNullable(symbol.children[0]):
+			symbol.fPos = [first_and_lastPos(symbol.children[0])[0]]
+			symbol.fPos.append(first_and_lastPos(symbol.children[1])[0])
+		else:
+			symbol.fPos = first_and_lastPos(symbol.children[0])[0]
+		if isNullable(symbol.children[1]):
+			symbol.lPos = [first_and_lastPos(symbol.children[0])[0]]
+			symbol.lPos.append(first_and_lastPos(symbol.children[1])[0])
+		else:
+			symbol.lPos = first_and_lastPos(symbol.children[1])[0]
+		return [symbol.fPos, symbol.lPos]
+
+def flatten(it):
+	for x in it:
+		try:
+			for y in flatten(x):
+				yield y
+		except TypeError:
+			yield x
+
+followp = {}
+def follow(root):
+	global followp
+	followpos(root, followp)
+	for c in root.children:
+		if c.value == "#":
+			followp[c.fPos] = []
+			continue
+		elif isLeaf(c):
+			continue
+		else:
+			follow(c)
+	return followp
+
+def followpos(node, followp):
+	if node.value == ".":
+		c1 = node.children[0]
+		c2 = node.children[1]
+		first = list(flatten([c2.fPos]))
+		last = list(flatten([c1.lPos]))
+		for i in last:
+			for pos in first:
+				try:
+					followp[i].append(pos)
+				except KeyError:
+					followp[i] = []
+					followp[i].append(pos)
+
+	elif node.value == "*":
+		l = list(flatten(node.lPos))
+		first = list(flatten(node.fPos))
+		for i in l:
+			for pos in first:
+				try:
+					followp[i].append(pos)
+				except KeyError:
+					followp[i] = []
+					followp[i].append(pos)
+
+	return followp
+
+def getInputs(ER):
+	r = set()
+	operators = ['.', "*", "|", "?", "+"]
+	for symbol in ER.span:
+		if symbol not in operators:
+			r.add(symbol)
+	return r
+
+correspond = {}
+def getC(node, inputs, correspond):
+	if node.value in inputs:
+		try:
+			correspond[node.value].append(node.fPos)
+		except KeyError:
+			correspond[node.value] = []
+			correspond[node.value].append(node.fPos)
+
+def getCorrespond(node, inputs):
+	global correspond
+	getC(node, inputs, correspond)
+	for c in node.children:
+		getCorrespond(c, inputs)
+	return correspond
+
+def createAFD(node, followp):
+	AF = FiniteAutomata()
+	state = "".join(str(e) for e in (list(flatten(node.fPos))))
+	AF.initial = state
+	Dstates = [state]
+	inputs = getInputs(node)
+	correspond = getCorrespond(node, inputs)
+
+	while len(Dstates) != 0:
+		S = Dstates.pop(0)
+		S = "".join(str(e) for e in (S))
+		AF.addState(S)
+		for symbol in inputs:
+			AF.alphabet.add(symbol)
+			new = set()
+			for c in correspond[symbol]:
+				if str(c) in S:
+					for x in followp[c]:
+						new.add(x)
+			new = "".join(str(e) for e in (new))
+			if new not in AF.states:
+				Dstates.append(new)
+			AF.addTrans(S, symbol, new)
+			for x in correspond["#"]:
+				if str(x) in new:
+					AF.addAccepting(new)
+	return AF
 # Converte ER para AFD usando árvore sintática
 def ER_to_AFD(ER):
 	ER = ER.regex['er'] + "#"
@@ -866,4 +1034,239 @@ def ER_to_AFD(ER):
 	rpn_regex = convertRPN(regex)
 	prefixed = post_to_pre(rpn_regex)
 	new = construct_tree(prefixed)
+	parseLeaves(new)
+	first_and_lastPos(new)
+	print("Arvore Sintática:")
 	print(new.__repr__())
+	def show(symbol):
+		print(symbol.value, "First Pos:", symbol.fPos, "Last Pos:", symbol.lPos)
+		for c in symbol.children:
+			show(c)
+	print("First e Last Pos:")
+	show(new)
+	followp = follow(new)
+	table = PrettyTable()
+	table.add_column("n", list(followp.keys()))
+	table.add_column("followpos", list(followp.values()))
+	print("\n")
+	print("Followpos:")
+	print(table)
+	AF = createAFD(new, followp)
+	print("\n")
+	print("Autômato:")
+	AF.show()
+
+# Reconhece sentenças usando um AP
+def recognizer_AP(GLC, sentence):
+	# (Incluir a remoção da recursividade à esquerda e fatoração após finalizar o código)
+	print('Sabemos que é necessário remover a recursividade à esquerda e fatorar a GLC.' \
+		  ' Para remover a recursividade à esquerda precisamos primeiramente torná-la &-livre.' \
+		  ' Ao eliminar a recursividade à esquerda, é possível que ela entre em loop infinito durante a fatoração.' \
+		  ' Portanto, tentaremos primeiramente remover a recursividade à esquerda e fatorar a GLC.' \
+		  ' Em seguida tentaremos apenas com a GLC sem recursividade à esquerda.' \
+		  ' Por último tentaremos rodar o reconhecedor com a GLC original.' \
+		  ' A sentença será reconhecida se qualquer uma dessas 3 opções reconhecer a sentença.')
+
+	def recognizer_AP_aux(GLC, sentence):
+		try:
+			# Cada produção é mapeada para um número único
+			i = 0
+			bodies_mapped = defaultdict(dict)
+			bodies_mapped_reversed = defaultdict(dict)
+			for head, body in GLC.rules.items():
+				for symbols in body:
+					bodies_mapped[head][symbols] = i
+					bodies_mapped_reversed[head][i] = symbols
+					i += 1
+
+			firsts = {}
+			follows = {}
+			# Inicialização dos firsts e follows
+			for head in GLC.rules.keys():
+				firsts[head] = set()
+				follows[head] = set()
+			follows[GLC.initial_state].add('$')
+
+			# Preenche os firsts não terminais
+			def get_firsts(head, firsts):
+				for symbols in GLC.rules[head]:
+					i = 0
+					while i < len(symbols):
+						char = symbols[i]
+						# Considerando que pode haver não-terminais do tipo X'''...
+						while i+1 < len(symbols) and symbols[i+1] == "'":
+							char += "'"
+							i += 1
+						if char in GLC.non_terminals:
+							get_firsts(char, firsts)
+							if '&' in firsts[char]:
+								# Se o último simbolo for terminal então não inclui &
+								if symbols[-1] in GLC.non_terminals:
+									firsts[head].update(firsts[char])
+								else:
+									firsts[head].update(firsts[char] - set('&'))
+							else:
+								# Se não contem '&' então não continua
+								firsts[head].update(firsts[char])
+								break
+						else:
+							firsts[head].add(char)
+							break
+						i += 1
+			for head in GLC.rules.keys():
+				get_firsts(head, firsts)
+
+			# Preenche os firsts terminais
+			for terminal in GLC.terminals.union('&'):
+				firsts[terminal] = {terminal}
+
+			# Preenche os follows
+			for head, body in GLC.rules.items():
+				for symbols in body:
+					i = 0
+					while i < len(symbols):
+						char = symbols[i]
+						while i+1 < len(symbols) and symbols[i+1] == "'":
+							char += "'"
+							i += 1
+						if char in GLC.non_terminals:
+							has_epsilon = True
+							j = i+1
+							# Segue enquanto há & nos firsts dos não terminais seguintes
+							while has_epsilon and j != len(symbols):
+								char_aux = symbols[j]
+								while j+1 != len(symbols) and symbols[j+1] == "'":
+									char_aux += "'"
+									j += 1
+								follows[char].update(firsts[char_aux])
+								if '&' in firsts[char_aux]:
+									j += 1
+								else:
+									has_epsilon = False
+						i += 1
+			# Os últimos não terminais dos corpos recebem o follow da cabeça enquanto houver & nos firsts
+			for head, body in GLC.rules.items():
+				for symbols in body:
+					symbols_reversed = symbols[::-1]
+					i = 0
+					while i < len(symbols):
+						char = symbols_reversed[i]
+						while char[0] == "'":
+							i += 1
+							char = symbols_reversed[i] + char
+						if char in GLC.non_terminals:
+							follows[char].update(follows[head])
+							# Continua enquanto houver '&' nos firsts
+							if '&' not in firsts[char]:
+								break
+						else:
+							break
+						i += 1
+			# Remove os & que foram adicionados nos follows
+			for head, follow in follows.items():
+				follow.discard('&')
+
+			# Inicializando tabela de análise
+			table = {}
+			for non_terminal in GLC.non_terminals:
+				table[non_terminal] = {}
+				for terminal in GLC.terminals:
+					table[non_terminal][terminal] = -1
+
+			# Montando a tabela de análise (tabela inicia em 0)
+			for head, body in GLC.rules.items():
+				for symbols in body:
+					i = 0
+					while i < len(symbols):
+						char = symbols[i]
+						while i+1 < len(symbols) and symbols[i+1] == "'":
+							char += "'"
+							i += 1
+						for first in firsts[char]:
+							table[head][first] = bodies_mapped[head][symbols]
+						# Continua para o first do próximo terminal enquanto houver '&'
+						if '&' in firsts[char]:
+							for follow in follows[head]:
+								table[head][follow] = bodies_mapped[head][symbols]
+						else:
+							break
+						i += 1
+
+			# Remove os & que foram adicionados na tabela
+			for symbols in table.values():
+				symbols.pop('&', None)
+
+			# Reconhecendo a sentença
+			AP = ['$', GLC.initial_state]
+			sentence = list(sentence)
+			sentence_symbol = sentence.pop(0)
+			AP_print = [] # Apenas utilizado para printar
+			while True:
+				AP_print.append(AP[:])
+				top = AP.pop()
+				# Desempilha os terminais e avança na senteça enquanto eles forem iguais
+				while top in GLC.terminals:
+					AP_print.append(AP[:])
+					if top == sentence_symbol:
+						top = AP.pop()
+						sentence_symbol = sentence.pop(0)
+					else:
+						break
+				# Se chegamos no fim de pilha $, e temos '$' na setença então aceita
+				# Também printa os firsts, follows e tabela
+				if top == '$' and sentence_symbol == '$':
+					print('\nFirsts:')
+					for head, first in firsts.items():
+						print(f'head: {head}, first: {first}')
+					print('\nFollows:')
+					for head, follow in follows.items():
+						print(f'head: {head}, follow: {follow}')
+					print('\nTabela de análise:')
+					for head, symbols in table.items():
+						print(f'head: {head}, symbols: {symbols}')
+					print('\nAP:')
+					for ap in AP_print:
+						print(f'AP: {ap}')
+					print()
+					return True
+				# Se não temos para onde ir dado o topo da pilha e a
+				# sentença de entrada atual, então não aceita a sentença
+				if not (top in table and sentence_symbol in table[top]):
+					return False
+				# Empilha de acordo com a nova produção
+				body_idx = table[top][sentence_symbol]
+				to_stack = bodies_mapped_reversed[top][body_idx]
+
+				symbols_reversed = to_stack[::-1]
+				i = 0
+				while i < len(to_stack):
+					char = symbols_reversed[i]
+					while char[0] == "'":
+						i += 1
+						char = symbols_reversed[i] + char
+					if char != '&':
+						AP.append(char)
+					i += 1
+		except:
+			return False
+
+	GLC_original = copy.deepcopy(GLC)
+	GLC_no_recursion = GLC_remove_left_recursion(GLC)
+	GLC_no_recursion_and_factored = GLC_factoring(GLC_no_recursion)
+
+	if not recognizer_AP_aux(GLC_no_recursion_and_factored, sentence):
+		if not recognizer_AP_aux(GLC_no_recursion, sentence):
+			if not recognizer_AP_aux(GLC_original, sentence):
+				return False
+			else:
+				print('A GLC original reconheceu a linguagem:\n')
+				GLC.show()
+				return True
+		else:
+			print('A GLC sem recursividade à esquerda reconheceu a linguagem:\n')
+			GLC.show()
+			return True
+	else:
+		print('A GLC sem recursividade à esquerda e fatorada reconheceu a linguagem:\n')
+		GLC.show()
+		return True

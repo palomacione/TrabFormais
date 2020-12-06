@@ -1,4 +1,5 @@
-import json
+from textwrap import indent
+
 
 class RegularExpression:
 
@@ -24,7 +25,7 @@ class RegularExpression:
 				right = line[1][1:]
 				self.regex[left] = right
 
-	# Salva a GR em um arquivo json local
+	# Salva a GR em um arquivo local
 	def save(self, filename):
 		formatted = []
 		with open(filename, "w") as writer:
@@ -33,29 +34,20 @@ class RegularExpression:
 			writer.write("".join(formatted))
 
 
-# class Node:
-# 	def __init__(self, val = None, firstPos = 0, lastPos = 0, nullable = False, isRoot = False):
-# 		self.val = val
-# 		self.firstPos = firstPos
-# 		self.lastPos = lastPos
-# 		self.left = None
-# 		self.right = None
-# 		self.nullable = nullable
-# 		self.isRoot = isRoot
+class Node():
+	def __init__(self, span, value, children, fPos, lPos):
+		self.fPos = fPos
+		self.lPos = lPos
+		self.span = span
+		self.value = value
+		self.children = children
+
+	def __repr__(self):
+		out = self.value + '\n'
+		out += indent('\n'.join(repr(c) for c in self.children), ' ' * 4)
+		return out
+
+
 #
-# 	def show(self):
-# 		print(f'Symbol: {self.val}')
-# 		print(f'FirstPos: {self.firstPos}')
-# 		print(f'LastPos: {self.lastPos}')
-# 		print(f'Left Child: {self.left.val}')
-# 		print(f'Right Child: {self.right.val}')
-# 		print(f'Nullable: {self.nullable}')
-#
-# 	def insert(self, other, operands):
-# 		if self.val == other.val
-# 			return
-# 		elif self.right is not None:
-# 			self.left = other
-# 		else:
 
 

@@ -1,1 +1,1 @@
-er: ab|c
+er: (a|b)*abb

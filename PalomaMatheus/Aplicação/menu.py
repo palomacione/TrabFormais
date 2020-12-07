@@ -107,11 +107,12 @@ class Menu():
 
 				AFD = FiniteAutomata()
 				AFD.load(ext + input_file)
-				AFD_min = AFD_minimizer(AFD)
-				AFD_min.save(ext + output_file)
 
 				print('\nSeu AFD de entrada foi:\n')
 				AFD.show()
+
+				AFD_min = AFD_minimizer(AFD)
+				AFD_min.save(ext + output_file)
 				print('\nSeu AFD minimizado de saída é:\n')
 				AFD_min.show()
 
